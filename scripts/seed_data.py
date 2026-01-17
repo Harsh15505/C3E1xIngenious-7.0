@@ -17,18 +17,18 @@ async def seed_cities():
     """Seed initial cities"""
     cities = [
         {
-            "name": "Mumbai",
-            "state": "Maharashtra",
-            "population": 12442373,
-            "latitude": 19.0760,
-            "longitude": 72.8777
+            "name": "Ahmedabad",
+            "state": "Gujarat",
+            "population": 8450000,
+            "latitude": 23.0225,
+            "longitude": 72.5714
         },
         {
-            "name": "Delhi",
-            "state": "Delhi",
-            "population": 11007835,
-            "latitude": 28.7041,
-            "longitude": 77.1025
+            "name": "Gandhinagar",
+            "state": "Gujarat",
+            "population": 292000,
+            "latitude": 23.2156,
+            "longitude": 72.6369
         }
     ]
     
@@ -47,16 +47,16 @@ async def seed_cities():
 async def seed_data_sources():
     """Seed data sources for tracking"""
     sources = [
-        {"name": "sensor-env-mumbai", "type": "environment", "expectedFrequency": 15},
-        {"name": "sensor-env-delhi", "type": "environment", "expectedFrequency": 15},
-        {"name": "sensor-traffic-mumbai-A", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-mumbai-B", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-mumbai-C", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-delhi-A", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-delhi-B", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-delhi-C", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-services-mumbai", "type": "services", "expectedFrequency": 30},
-        {"name": "sensor-services-delhi", "type": "services", "expectedFrequency": 30},
+        {"name": "sensor-env-ahmedabad", "type": "environment", "expectedFrequency": 15},
+        {"name": "sensor-env-gandhinagar", "type": "environment", "expectedFrequency": 15},
+        {"name": "sensor-traffic-ahmedabad-A", "type": "traffic", "expectedFrequency": 30},
+        {"name": "sensor-traffic-ahmedabad-B", "type": "traffic", "expectedFrequency": 30},
+        {"name": "sensor-traffic-ahmedabad-C", "type": "traffic", "expectedFrequency": 30},
+        {"name": "sensor-traffic-gandhinagar-A", "type": "traffic", "expectedFrequency": 30},
+        {"name": "sensor-traffic-gandhinagar-B", "type": "traffic", "expectedFrequency": 30},
+        {"name": "sensor-traffic-gandhinagar-C", "type": "traffic", "expectedFrequency": 30},
+        {"name": "sensor-services-ahmedabad", "type": "services", "expectedFrequency": 30},
+        {"name": "sensor-services-gandhinagar", "type": "services", "expectedFrequency": 30},
     ]
     
     logger.info("Seeding data sources...")

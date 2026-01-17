@@ -197,7 +197,7 @@ prisma generate
 # Run database migrations
 prisma migrate dev --name init
 
-# Seed initial data (Mumbai and Delhi + data sources)
+# Seed initial data (Ahmedabad and Gandhinagar + data sources)
 python ../scripts/seed_data.py
 
 # Start FastAPI server (includes scheduler)

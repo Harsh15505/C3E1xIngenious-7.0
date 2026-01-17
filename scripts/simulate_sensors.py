@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 API_BASE_URL = "http://localhost:8000/api/v1"
 
 # Sample cities
-CITIES = ["Mumbai", "Delhi"]
+CITIES = ["Ahmedabad", "Gandhinagar"]
 ZONES = ["A", "B", "C"]
 
 
