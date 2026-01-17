@@ -38,12 +38,12 @@ export default function MunicipalDashboard() {
       });
       setAlerts(alertsData);
 
-      // Load risk score
+      // Load risk score (Phase 10 ML endpoint)
       const risk = await api.getRiskScore(selectedCity.toLowerCase());
-      setRiskScore(risk);
+      setRiskScore(risk.risk_assessment || risk); // Handle new format
 
-      // Load anomalies
-      const anomaliesData = await api.detectAnomalies(selectedCity.toLowerCase());
+      // Load anomalies (Phase 10 ML endpoint)
+      const anomaliesData = await api.detectAnomalies(selectedCity.toLowerCase(), 24);
       setAnomalies(anomaliesData);
 
       // Load chart data
@@ -91,6 +91,19 @@ export default function MunicipalDashboard() {
         count: Number(count)
       }))
     : [];
+
+  const riskLevel = riskScore?.risk_score !== undefined
+    ? (riskScore.risk_score >= 0.7
+        ? 'critical'
+        : riskScore.risk_score >= 0.5
+          ? 'high'
+          : riskScore.risk_score >= 0.3
+            ? 'medium'
+            : 'low')
+    : undefined;
+
+  const anomaliesList = anomalies?.anomalies || [];
+  const highSeverityAnomalies = anomaliesList.filter((a: any) => a.severity === 'high');
 
   if (loading) {
     return (
@@ -142,15 +155,21 @@ export default function MunicipalDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Overall Risk</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {riskScore ? (riskScore.overall_score * 100).toFixed(1) : '—'}
+                  {riskScore ? (riskScore.risk_score * 100).toFixed(1) : '—'}
                 </p>
                 <p className={`text-sm font-semibold mt-1 ${
-                  riskScore?.overall_level === 'HIGH' ? 'text-red-600' :
-                  riskScore?.overall_level === 'MEDIUM' ? 'text-yellow-600' :
+                  riskLevel === 'critical' ? 'text-red-600' :
+                  riskLevel === 'high' ? 'text-orange-600' :
+                  riskLevel === 'medium' ? 'text-yellow-600' :
                   'text-green-600'
                 }`}>
-                  {riskScore?.overall_level || '—'}
+                  {riskLevel ? riskLevel.toUpperCase() : 'UNKNOWN'}
                 </p>
+                {riskScore?.confidence_score && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Confidence: {(riskScore.confidence_score * 100).toFixed(0)}%
+                  </p>
+                )}
               </div>
               <div className="text-4xl">🎯</div>
             </div>
@@ -178,10 +197,10 @@ export default function MunicipalDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Anomalies</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {anomalies?.total_anomalies || 0}
+                  {anomaliesList.length}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {anomalies?.high_severity || 0} high severity
+                  {highSeverityAnomalies.length} high severity
                 </p>
               </div>
               <div className="text-4xl">⚠️</div>
@@ -258,34 +277,33 @@ export default function MunicipalDashboard() {
               <h2 className="text-xl font-semibold text-gray-900">Risk Breakdown</h2>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="border rounded-lg p-4">
                   <p className="text-sm text-gray-600">Environment</p>
                   <p className="text-2xl font-bold text-gray-900 mt-1">
-                    {(riskScore.environment_score * 100).toFixed(0)}%
+                    {riskScore?.breakdown?.environment !== undefined
+                      ? (riskScore.breakdown.environment * 100).toFixed(0)
+                      : '—'}%
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Weight: 35%</p>
+                  <p className="text-xs text-gray-500 mt-1">Weight: 40%</p>
                 </div>
                 <div className="border rounded-lg p-4">
                   <p className="text-sm text-gray-600">Traffic</p>
                   <p className="text-2xl font-bold text-gray-900 mt-1">
-                    {(riskScore.traffic_score * 100).toFixed(0)}%
+                    {riskScore?.breakdown?.traffic !== undefined
+                      ? (riskScore.breakdown.traffic * 100).toFixed(0)
+                      : '—'}%
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Weight: 25%</p>
+                  <p className="text-xs text-gray-500 mt-1">Weight: 35%</p>
                 </div>
                 <div className="border rounded-lg p-4">
                   <p className="text-sm text-gray-600">Services</p>
                   <p className="text-2xl font-bold text-gray-900 mt-1">
-                    {(riskScore.services_score * 100).toFixed(0)}%
+                    {riskScore?.breakdown?.services !== undefined
+                      ? (riskScore.breakdown.services * 100).toFixed(0)
+                      : '—'}%
                   </p>
                   <p className="text-xs text-gray-500 mt-1">Weight: 25%</p>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Anomalies</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">
-                    {(riskScore.anomaly_risk * 100).toFixed(0)}%
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">Weight: 15%</p>
                 </div>
               </div>
 

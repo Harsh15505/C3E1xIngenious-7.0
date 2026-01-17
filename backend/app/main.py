@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+from tortoise import Tortoise
 
 # Import scheduler
 from app.scheduler import start_scheduler, stop_scheduler, get_job_status
@@ -74,10 +75,18 @@ async def root():
 
 @app.get("/health")
 async def health_check():
+    db_status = "healthy"
+    try:
+        connection = Tortoise.get_connection("default")
+        await connection.execute_query("SELECT 1")
+    except Exception:
+        db_status = "unhealthy"
+
     return {
-        "status": "healthy",
+        "status": "healthy" if db_status == "healthy" else "degraded",
         "service": "api",
-        "scheduler": "running"
+        "scheduler": "running",
+        "database": db_status
     }
 
 @app.get("/scheduler/status")

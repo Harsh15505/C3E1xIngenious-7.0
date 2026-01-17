@@ -83,11 +83,8 @@ export const api = {
     return response.json();
   },
 
-  async detectAnomalies(city: string, severity?: string) {
-    const url = severity 
-      ? `${API_BASE_URL}/api/v1/analytics/anomalies/${city}?severity=${severity}`
-      : `${API_BASE_URL}/api/v1/analytics/anomalies/${city}`;
-    const response = await fetch(url);
+  async detectAnomalies(city: string, hours: number = 24) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/analytics/ml-anomalies/${city}?hours=${hours}`);
     if (!response.ok) throw new Error('Failed to detect anomalies');
     return response.json();
   },
@@ -99,7 +96,7 @@ export const api = {
   },
 
   async getRiskScore(city: string) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/analytics/risk/${city}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/analytics/ml-risk/${city}`);
     if (!response.ok) throw new Error('Failed to fetch risk score');
     return response.json();
   },
@@ -107,6 +104,19 @@ export const api = {
   async getRiskHistory(city: string, limit: number = 20) {
     const response = await fetch(`${API_BASE_URL}/api/v1/analytics/risk/${city}/history?limit=${limit}`);
     if (!response.ok) throw new Error('Failed to fetch risk history');
+    return response.json();
+  },
+
+  // Phase 10 ML Endpoints
+  async getForecast(city: string, days: number = 7) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/analytics/forecast/${city}?days=${days}`);
+    if (!response.ok) throw new Error('Failed to fetch forecast');
+    return response.json();
+  },
+
+  async getCitySummary(city: string) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/analytics/city-summary/${city}`);
+    if (!response.ok) throw new Error('Failed to fetch city summary');
     return response.json();
   },
 
