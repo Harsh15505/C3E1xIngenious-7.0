@@ -23,8 +23,8 @@ async def fetch_environment_data():
     logger.info(f"[CRON] Fetching real-time environment data at {datetime.utcnow()}")
     
     try:
-        from app.real_time_fetchers import fetch_realtime_data
-        await fetch_realtime_data()
+        from app.modules.fetchers.weather import fetch_all_cities_weather
+        await fetch_all_cities_weather()
     except Exception as e:
         logger.error(f"Real-time data fetch failed: {e}")
 

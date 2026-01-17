@@ -4,7 +4,7 @@ Generates alerts based on forecasts, anomalies, risk scores, and system health
 """
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.models import City, Alert, Anomaly, RiskScore, Forecast, DataSource
 import logging
 
@@ -26,6 +26,9 @@ class AlertGenerator:
         "pm25": {"warning": 35, "critical": 75},
         "waterStress": {"warning": 0.7, "critical": 0.9}
     }
+
+    ML_ANOMALY_CONFIDENCE_MIN = 0.6
+    ML_ANOMALY_CONFIDENCE_DOWNGRADE = 0.75
     
     @staticmethod
     async def generate_all_alerts(city_name: str) -> Dict[str, Any]:
@@ -45,12 +48,14 @@ class AlertGenerator:
             # Generate from different sources
             risk_alerts = await AlertGenerator.generate_risk_alerts(city)
             anomaly_alerts = await AlertGenerator.generate_anomaly_alerts(city)
+            ml_anomaly_alerts = await AlertGenerator.generate_ml_anomaly_alerts(city)
             forecast_alerts = await AlertGenerator.generate_forecast_alerts(city)
             system_alerts = await AlertGenerator.generate_system_alerts(city)
             
             results["breakdown"] = {
                 "risk": len(risk_alerts),
                 "anomaly": len(anomaly_alerts),
+                "ml_anomaly": len(ml_anomaly_alerts),
                 "forecast": len(forecast_alerts),
                 "system": len(system_alerts)
             }
@@ -121,6 +126,87 @@ class AlertGenerator:
         except Exception as e:
             logger.error(f"Error generating risk alerts: {str(e)}")
         
+        return alerts_created
+
+    @staticmethod
+    async def generate_ml_anomaly_alerts(city: City) -> List[str]:
+        """Generate alerts from ML anomaly detection results"""
+        alerts_created: List[str] = []
+
+        try:
+            from app.modules.ml.core import detect_anomalies
+
+            result = await detect_anomalies(city.name, hours=24)
+            anomalies = result.get("anomalies", [])
+            confidence = result.get("confidence_score", 0.0)
+
+            if confidence < AlertGenerator.ML_ANOMALY_CONFIDENCE_MIN:
+                logger.info(
+                    f"Skipping ML anomaly alerts for {city.name}: low confidence {confidence:.2f}"
+                )
+                return alerts_created
+
+            for anomaly in anomalies:
+                metric = anomaly.get("metric")
+                timestamp = anomaly.get("timestamp")
+                signature = f"ml:{metric}:{timestamp}"
+
+                existing = await Alert.filter(
+                    city=city,
+                    type="anomaly",
+                    is_active=True,
+                    metadata__contains={"signature": signature}
+                ).first()
+
+                if existing:
+                    continue
+
+                severity = anomaly.get("severity", "low")
+                if severity == "high":
+                    alert_severity = "critical"
+                    audience = "both"
+                elif severity == "medium":
+                    alert_severity = "warning"
+                    audience = "internal"
+                else:
+                    alert_severity = "info"
+                    audience = "internal"
+
+                if confidence < AlertGenerator.ML_ANOMALY_CONFIDENCE_DOWNGRADE:
+                    if alert_severity == "critical":
+                        alert_severity = "warning"
+                        audience = "internal"
+
+                title = f"ML Anomaly Detected: {metric}"
+                message = (
+                    f"ML detected abnormal {metric} value {anomaly.get('value')}. "
+                    f"Z-score: {anomaly.get('z_score')}. "
+                    f"Confidence: {confidence:.2f}."
+                )
+
+                alert = await Alert.create(
+                    city=city,
+                    type="anomaly",
+                    severity=alert_severity,
+                    audience=audience,
+                    title=title,
+                    message=message,
+                    metadata={
+                        "signature": signature,
+                        "source": "ml",
+                        "metric": metric,
+                        "timestamp": timestamp,
+                        "value": anomaly.get("value"),
+                        "z_score": anomaly.get("z_score"),
+                        "severity": severity,
+                        "confidence_score": confidence
+                    }
+                )
+                alerts_created.append(str(alert.id))
+
+        except Exception as e:
+            logger.error(f"Error generating ML anomaly alerts: {str(e)}")
+
         return alerts_created
     
     @staticmethod

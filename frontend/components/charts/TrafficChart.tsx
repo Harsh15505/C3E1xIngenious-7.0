@@ -8,10 +8,16 @@ type TrafficChartProps = {
 };
 
 export default function TrafficChart({ data }: TrafficChartProps) {
-  const chartData = data.map(item => ({
-    zone: item.zone.charAt(0).toUpperCase() + item.zone.slice(1),
-    congestion: (item.congestion * 100).toFixed(0)
-  }));
+  const chartData = data.map(item => {
+    const rawValue = typeof item.congestion === 'string'
+      ? Number(item.congestion)
+      : item.congestion;
+    const percent = rawValue <= 1 ? rawValue * 100 : rawValue;
+    return {
+      zone: item.zone.charAt(0).toUpperCase() + item.zone.slice(1),
+      congestion: Number.isFinite(percent) ? Number(percent.toFixed(0)) : 0
+    };
+  });
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">

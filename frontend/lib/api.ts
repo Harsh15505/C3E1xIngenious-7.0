@@ -74,6 +74,12 @@ export const api = {
     return response.json();
   },
 
+  async getFreshness() {
+    const response = await fetch(`${API_BASE_URL}/api/v1/system/freshness`);
+    if (!response.ok) throw new Error('Failed to fetch data freshness');
+    return response.json();
+  },
+
   // ========================================
   // ANALYTICS APIs (Phase 3)
   // ========================================

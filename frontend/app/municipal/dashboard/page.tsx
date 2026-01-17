@@ -246,6 +246,11 @@ export default function MunicipalDashboard() {
                         <p className="text-sm text-gray-700 mt-1">
                           {alert.message}
                         </p>
+                        {alert.metadata?.source === 'ml' && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            ML Alert • Confidence: {(alert.metadata.confidence_score * 100).toFixed(0)}%
+                          </p>
+                        )}
                         <p className="text-xs text-gray-500 mt-2">
                           {formatTimestamp(alert.created_at)}
                         </p>

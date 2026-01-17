@@ -109,23 +109,17 @@ class RealTimeDataFetcher:
                 logger.warning(f"No data fetched for {city.name}")
                 return False
             
-            # Combine data and store
+            # Combine data and store (schema-aligned)
             env_record = {
                 'city': city,
                 'timestamp': datetime.utcnow(),
                 'temperature': weather_data.get('temperature') if weather_data else None,
-                'humidity': weather_data.get('humidity') if weather_data else None,
-                'wind_speed': weather_data.get('wind_speed') if weather_data else None,
                 'aqi': aqi_data.get('aqi') if aqi_data else None,
-                'precipitation': 0.0,  # Not available from free APIs
+                'pm25': aqi_data.get('pm25') if aqi_data else None,
+                'rainfall': 0.0,  # Not available from free APIs
                 'source': 'realtime_api',
-                'metadata': {
-                    'weather_source': 'openweathermap' if weather_data else None,
-                    'aqi_source': 'aqicn' if aqi_data else None,
-                    'description': weather_data.get('description') if weather_data else None,
-                    'pm25': aqi_data.get('pm25') if aqi_data else None,
-                    'pm10': aqi_data.get('pm10') if aqi_data else None,
-                }
+                'is_fresh': True,
+                'is_validated': False
             }
             
             await EnvironmentData.create(**env_record)

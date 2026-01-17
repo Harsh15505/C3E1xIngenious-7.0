@@ -10,11 +10,14 @@ type EnvironmentChartProps = {
 
 export default function EnvironmentChart({ data }: EnvironmentChartProps) {
   // Transform and limit data
-  const chartData = data.slice(-24).map(item => ({
-    time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temp: item.temperature.toFixed(1),
-    aqi: item.aqi
-  }));
+  const chartData = data
+    .filter(item => typeof item.temperature === 'number' && typeof item.aqi === 'number')
+    .slice(-24)
+    .map(item => ({
+      time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      temp: Number(item.temperature.toFixed(1)),
+      aqi: item.aqi
+    }));
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">

@@ -166,10 +166,8 @@ async def get_environment_history(
             {
                 "timestamp": d.timestamp.isoformat(),
                 "temperature": d.temperature,
-                "humidity": d.humidity,
                 "aqi": d.aqi,
-                "pm25": d.pm25,
-                "pm10": d.pm10
+                "pm25": d.pm25
             }
             for d in reversed(data)  # Oldest first for chart display
         ]
@@ -202,9 +200,19 @@ async def get_traffic_data(
     zones_data = {}
     for d in data:
         if d.zone not in zones_data:
+            congestion_map = {
+                "low": 30,
+                "medium": 60,
+                "high": 90
+            }
+            congestion_value = (
+                congestion_map.get(d.congestion_level.lower())
+                if isinstance(d.congestion_level, str)
+                else d.congestion_level
+            )
             zones_data[d.zone] = {
                 "zone": d.zone,
-                "congestion": round(d.congestion_level * 100, 1),  # Convert to percentage
+                "congestion": round(float(congestion_value), 1),
                 "timestamp": d.timestamp.isoformat()
             }
     

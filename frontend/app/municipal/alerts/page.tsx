@@ -6,13 +6,16 @@ import Header from '@/components/Header';
 import { api } from '@/lib/api';
 
 type Alert = {
-  alert_id: string;
+  id: string;
   city: string;
+  type: string;
   severity: string;
+  title: string;
   message: string;
   audience: string;
   created_at: string;
-  resolved: boolean;
+  is_active: boolean;
+  metadata?: Record<string, any>;
 };
 
 export default function AlertsPage() {
@@ -40,7 +43,14 @@ export default function AlertsPage() {
       const allAlerts: Alert[] = [];
       for (const city of cities) {
         const cityAlerts = await api.getAlerts(city.toLowerCase());
-        allAlerts.push(...cityAlerts);
+        if (cityAlerts?.alerts?.length) {
+          allAlerts.push(
+            ...cityAlerts.alerts.map((alert: any) => ({
+              ...alert,
+              city
+            }))
+          );
+        }
       }
       setAlerts(allAlerts);
     } catch (error) {
@@ -67,7 +77,7 @@ export default function AlertsPage() {
 
     if (statusFilter !== 'all') {
       const isResolved = statusFilter === 'resolved';
-      filtered = filtered.filter(a => a.resolved === isResolved);
+      filtered = filtered.filter(a => a.is_active === !isResolved);
     }
 
     setFilteredAlerts(filtered);
@@ -77,7 +87,7 @@ export default function AlertsPage() {
     try {
       await api.resolveAlert(alertId);
       setAlerts(alerts.map(a => 
-        a.alert_id === alertId ? { ...a, resolved: true } : a
+        a.id === alertId ? { ...a, is_active: false } : a
       ));
     } catch (error) {
       console.error('Failed to resolve alert:', error);
@@ -87,9 +97,14 @@ export default function AlertsPage() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical': return 'bg-red-100 text-red-800 border-red-300';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'low': return 'bg-green-100 text-green-800 border-green-300';
+      case 'warning':
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'info':
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-300';
       default: return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
@@ -218,9 +233,9 @@ export default function AlertsPage() {
             <div className="space-y-4">
               {filteredAlerts.map((alert) => (
                 <div
-                  key={alert.alert_id}
+                  key={alert.id}
                   className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${
-                    alert.resolved ? 'opacity-60 border-gray-300' : getSeverityColor(alert.severity).split(' ')[2].replace('border-', 'border-')
+                    !alert.is_active ? 'opacity-60 border-gray-300' : getSeverityColor(alert.severity).split(' ')[2].replace('border-', 'border-')
                   }`}
                 >
                   <div className="flex justify-between items-start">
@@ -235,24 +250,35 @@ export default function AlertsPage() {
                         <span className="text-sm text-gray-600">
                           📍 {alert.city.charAt(0).toUpperCase() + alert.city.slice(1)}
                         </span>
-                        {alert.resolved && (
+                        {!alert.is_active && (
                           <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                             ✓ Resolved
                           </span>
                         )}
+                        {alert.metadata?.source === 'ml' && (
+                          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            🤖 ML
+                          </span>
+                        )}
                       </div>
-                      <p className="text-gray-900 text-lg mb-2">{alert.message}</p>
+                      <p className="text-gray-900 text-lg mb-1">{alert.title}</p>
+                      <p className="text-gray-700 text-sm mb-2">{alert.message}</p>
+                      {alert.metadata?.confidence_score !== undefined && (
+                        <p className="text-xs text-blue-600 mb-2">
+                          Confidence: {(alert.metadata.confidence_score * 100).toFixed(0)}%
+                        </p>
+                      )}
                       <p className="text-sm text-gray-500">
                         Created: {new Date(alert.created_at).toLocaleString()}
                       </p>
                       <p className="text-xs text-gray-400 mt-1 font-mono">
-                        ID: {alert.alert_id}
+                        ID: {alert.id}
                       </p>
                     </div>
 
-                    {!alert.resolved && (
+                    {alert.is_active && (
                       <button
-                        onClick={() => handleResolve(alert.alert_id)}
+                        onClick={() => handleResolve(alert.id)}
                         className="ml-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-md transition"
                       >
                         Resolve

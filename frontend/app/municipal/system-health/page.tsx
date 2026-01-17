@@ -15,17 +15,20 @@ type AuditLog = {
 
 export default function SystemHealthPage() {
   const [healthData, setHealthData] = useState<any>(null);
+  const [freshness, setFreshness] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(true);
 
   useEffect(() => {
     loadHealthData();
+    loadFreshness();
     loadAuditLogs();
     
     // Refresh every 30 seconds
     const interval = setInterval(() => {
       loadHealthData();
+      loadFreshness();
     }, 30000);
     
     return () => clearInterval(interval);
@@ -53,6 +56,15 @@ export default function SystemHealthPage() {
     }
   };
 
+  const loadFreshness = async () => {
+    try {
+      const data = await api.getFreshness();
+      setFreshness(data);
+    } catch (error) {
+      console.error('Failed to load data freshness:', error);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     return status === 'healthy' ? 'text-green-600' : 'text-red-600';
   };
@@ -69,6 +81,40 @@ export default function SystemHealthPage() {
     if (days > 0) return `${days}d ${hours}h ${minutes}m`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
+  };
+
+  const formatAge = (minutes?: number | null) => {
+    if (minutes === null || minutes === undefined) return 'No data';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m ago`;
+  };
+
+  const freshnessClass = (status?: string) => {
+    switch (status) {
+      case 'fresh':
+        return 'bg-green-50 border-green-200 text-green-700';
+      case 'warning':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+      case 'stale':
+        return 'bg-red-50 border-red-200 text-red-700';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-600';
+    }
+  };
+
+  const freshnessIcon = (status?: string) => {
+    switch (status) {
+      case 'fresh':
+        return '✓';
+      case 'warning':
+        return '⚠';
+      case 'stale':
+        return '✗';
+      default:
+        return '•';
+    }
   };
 
   return (
@@ -174,43 +220,49 @@ export default function SystemHealthPage() {
               <div className="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Data Freshness</h2>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className={`flex items-center justify-between p-4 rounded-lg border ${freshnessClass(freshness?.by_type?.environment?.status)}`}>
                     <div className="flex items-center">
-                      <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <span className="w-6 h-6 mr-3 flex items-center justify-center">
+                        {freshnessIcon(freshness?.by_type?.environment?.status)}
+                      </span>
                       <div>
                         <p className="font-medium text-gray-900">Environment Data</p>
-                        <p className="text-sm text-gray-600">Temperature, AQI, Humidity</p>
+                        <p className="text-sm text-gray-600">Temperature, AQI, PM2.5</p>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-green-700">15 min ago</span>
+                    <span className="text-sm font-medium">
+                      {formatAge(freshness?.by_type?.environment?.age_minutes)}
+                    </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className={`flex items-center justify-between p-4 rounded-lg border ${freshnessClass(freshness?.by_type?.traffic?.status)}`}>
                     <div className="flex items-center">
-                      <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <span className="w-6 h-6 mr-3 flex items-center justify-center">
+                        {freshnessIcon(freshness?.by_type?.traffic?.status)}
+                      </span>
                       <div>
                         <p className="font-medium text-gray-900">Traffic Data</p>
-                        <p className="text-sm text-gray-600">5 zones per city</p>
+                        <p className="text-sm text-gray-600">Zone congestion</p>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-green-700">1 hour ago</span>
+                    <span className="text-sm font-medium">
+                      {formatAge(freshness?.by_type?.traffic?.age_minutes)}
+                    </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className={`flex items-center justify-between p-4 rounded-lg border ${freshnessClass(freshness?.by_type?.services?.status)}`}>
                     <div className="flex items-center">
-                      <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <span className="w-6 h-6 mr-3 flex items-center justify-center">
+                        {freshnessIcon(freshness?.by_type?.services?.status)}
+                      </span>
                       <div>
                         <p className="font-medium text-gray-900">Service Status</p>
                         <p className="text-sm text-gray-600">Water, Power, Waste</p>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-green-700">12 hours ago</span>
+                    <span className="text-sm font-medium">
+                      {formatAge(freshness?.by_type?.services?.age_minutes)}
+                    </span>
                   </div>
                 </div>
               </div>
