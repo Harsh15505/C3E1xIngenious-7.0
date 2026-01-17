@@ -27,6 +27,22 @@ async def simulate_scenario(scenario: ScenarioInput):
         raise HTTPException(status_code=500, detail=f"Simulation failed: {str(e)}")
 
 
+@router.post("/simulate/{city}")
+async def simulate_scenario_with_city(city: str, scenario: ScenarioInput):
+    """
+    Simulate a policy scenario with city in path.
+    If the request body omits city, inject it from the path.
+    """
+    try:
+        payload = scenario.dict()
+        if not payload.get("city"):
+            payload["city"] = city
+        result = await ScenarioEngine.simulate(payload)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Simulation failed: {str(e)}")
+
+
 @router.get("/explain")
 async def explain_model():
     """Get explanation of the scenario model and its assumptions"""

@@ -3,11 +3,14 @@ FastAPI Application Entry Point
 Urban Intelligence Platform
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 import asyncio
+from datetime import datetime, timezone
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from tortoise import Tortoise
 
 # Import scheduler
@@ -64,6 +67,42 @@ app.add_middleware(
 
 # Request audit logging
 app.add_middleware(AuditLoggingMiddleware)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": "HTTPException",
+            "message": exc.detail,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "ValidationError",
+            "message": exc.errors(),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "InternalServerError",
+            "message": str(exc),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    )
 
 @app.get("/")
 async def root():

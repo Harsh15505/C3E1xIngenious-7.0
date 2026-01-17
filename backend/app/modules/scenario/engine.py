@@ -24,6 +24,54 @@ class ScenarioEngine:
     ZONE_SPILLOVER_FACTOR = 0.15    # Impact on adjacent zones
     
     @staticmethod
+    def _analyze_time_window(time_window: str) -> Dict[str, Any]:
+        """
+        Analyze time window to determine peak hour characteristics.
+        Peak hours have higher impact multipliers.
+        
+        Peak hours for Indian cities: 8:00-11:00 (morning), 17:00-21:00 (evening)
+        """
+        try:
+            start_time, end_time = time_window.split('-')
+            start_hour = int(start_time.split(':')[0])
+            end_hour = int(end_time.split(':')[0])
+            
+            # Determine if this overlaps with peak hours
+            is_morning_peak = (start_hour <= 10 and end_hour >= 8)
+            is_evening_peak = (start_hour <= 20 and end_hour >= 17)
+            is_night = (start_hour >= 22 or end_hour <= 6)
+            
+            if is_morning_peak or is_evening_peak:
+                impact_multiplier = 1.4  # Peak hour changes have higher impact
+                period_type = "peak"
+                baseline_traffic = 85  # % during peak
+            elif is_night:
+                impact_multiplier = 0.6  # Night changes have lower impact
+                period_type = "off-peak (night)"
+                baseline_traffic = 30  # % during night
+            else:
+                impact_multiplier = 1.0  # Normal hours
+                period_type = "off-peak"
+                baseline_traffic = 55  # % during off-peak
+            
+            return {
+                "multiplier": impact_multiplier,
+                "period_type": period_type,
+                "baseline_traffic": baseline_traffic,
+                "start_hour": start_hour,
+                "end_hour": end_hour
+            }
+        except:
+            # Default to normal hours if parsing fails
+            return {
+                "multiplier": 1.0,
+                "period_type": "standard",
+                "baseline_traffic": 60,
+                "start_hour": 8,
+                "end_hour": 11
+            }
+    
+    @staticmethod
     async def simulate(scenario_input: Dict[str, Any]) -> Dict[str, Any]:
         """
         Simulate a policy scenario and predict multi-dimensional impacts
@@ -78,12 +126,30 @@ class ScenarioEngine:
         baseline_aqi = baseline_aqi or 100
         baseline_density = baseline_density or 60
         
+        # Analyze time window for peak hour effects
+        time_analysis = ScenarioEngine._analyze_time_window(time_window)
+        peak_multiplier = time_analysis["multiplier"]
+        period_type = time_analysis["period_type"]
+        
+        # Adjust baseline density based on time of day
+        baseline_density = time_analysis["baseline_traffic"]
+        
+        # Zone-specific baseline adjustments
+        zone_characteristics = {
+            "A": {"congestion_level": "High", "baseline_aqi_factor": 1.15, "traffic_density": 85},
+            "B": {"congestion_level": "Medium", "baseline_aqi_factor": 1.0, "traffic_density": 65},
+            "C": {"congestion_level": "Low", "baseline_aqi_factor": 0.85, "traffic_density": 45}
+        }
+        zone_info = zone_characteristics.get(zone, zone_characteristics["B"])
+        baseline_aqi = baseline_aqi * zone_info["baseline_aqi_factor"]
+        
         # Simulate impacts
         impacts = []
         
         # IMPACT 1: Air Quality (AQI/PM2.5)
         if traffic_change != 0:
-            aqi_change = traffic_change * ScenarioEngine.TRAFFIC_AQI_COEFFICIENT
+            # Apply time window multiplier - peak hours have bigger impact
+            aqi_change = traffic_change * ScenarioEngine.TRAFFIC_AQI_COEFFICIENT * peak_multiplier
             
             if heavy_restriction:
                 # Heavy vehicle ban amplifies AQI improvement
@@ -99,29 +165,64 @@ class ScenarioEngine:
                 "direction": "decrease" if aqi_change < 0 else "increase",
                 "confidence": 0.78,
                 "explanation": f"Traffic-AQI correlation coefficient: {ScenarioEngine.TRAFFIC_AQI_COEFFICIENT}. "
+                              f"Time window: {time_window} ({period_type}, multiplier: {peak_multiplier}x). "
                               f"{'Heavy vehicle restriction amplifies impact by {:.0%}.'.format(ScenarioEngine.HEAVY_VEHICLE_PM25_IMPACT - 1) if heavy_restriction else ''}"
             })
         
-        # IMPACT 2: PM2.5 Concentration
+        # IMPACT 2: PM2.5 Concentration (Heavy Vehicle Restriction - INDEPENDENT EFFECT)
         if heavy_restriction:
             # Heavy vehicle ban reduces PM2.5 by 12-18% (Indian city studies)
-            pm25_reduction = -15.0
+            # This effect happens regardless of overall traffic change
+            pm25_reduction = -15.0 * peak_multiplier  # Peak hours = more heavy vehicles
+            
+            # Calculate absolute PM2.5 reduction
+            estimated_current_pm25 = baseline_aqi * 0.6  # Rough PM2.5 correlation with AQI
+            predicted_pm25 = estimated_current_pm25 * (1 + pm25_reduction / 100)
             
             impacts.append({
                 "metric": "PM2.5 Concentration",
-                "baseline": "Current levels",
-                "predicted": f"{pm25_reduction}% reduction",
-                "change_percent": pm25_reduction,
+                "baseline": f"{round(estimated_current_pm25, 1)} μg/m³",
+                "predicted": f"{round(predicted_pm25, 1)} μg/m³ ({pm25_reduction:.1f}% reduction)",
+                "change_percent": round(pm25_reduction, 1),
                 "direction": "decrease",
                 "confidence": 0.72,
-                "explanation": "Based on Delhi & Mumbai heavy vehicle ban studies (2020-2023). "
-                              "Heavy diesel vehicles contribute 25-30% of PM2.5 emissions."
+                "explanation": f"Heavy diesel vehicles contribute 25-30% of PM2.5 emissions. "
+                              f"During {period_type} hours, heavy vehicle presence is {'higher' if peak_multiplier > 1 else 'lower'}, "
+                              f"so restriction impact is {abs(round((peak_multiplier - 1) * 100))}% {'amplified' if peak_multiplier > 1 else 'reduced'}. "
+                              f"Based on Delhi & Mumbai studies (2020-2023)."
+            })
+            
+            # IMPACT 2b: Noise Pollution (Heavy Vehicle Restriction)
+            noise_reduction = -8.0 * peak_multiplier  # dB reduction
+            impacts.append({
+                "metric": "Noise Pollution",
+                "baseline": f"Current noise levels in Zone {zone}",
+                "predicted": f"{abs(round(noise_reduction, 1))} dB reduction",
+                "change_percent": round(noise_reduction, 1),
+                "direction": "decrease",
+                "confidence": 0.68,
+                "explanation": f"Heavy vehicles contribute significantly to traffic noise. "
+                              f"Restriction during {period_type} hours reduces noise pollution. "
+                              f"Zone {zone} has {zone_info['congestion_level'].lower()} congestion baseline."
+            })
+            
+            # IMPACT 2c: Road Wear & Maintenance (Heavy Vehicle Restriction)
+            road_wear_reduction = -20.0  # Heavy vehicles cause disproportionate road damage
+            impacts.append({
+                "metric": "Road Infrastructure Stress",
+                "baseline": "Current wear rate",
+                "predicted": f"{abs(round(road_wear_reduction, 1))}% reduction in road damage",
+                "change_percent": round(road_wear_reduction, 1),
+                "direction": "decrease",
+                "confidence": 0.75,
+                "explanation": "Heavy vehicles cause 90% of road damage despite being <10% of traffic. "
+                              f"Restriction in Zone {zone} ({zone_info['congestion_level']} density area) significantly reduces maintenance costs."
             })
         
         # IMPACT 3: Traffic Congestion & Travel Time
         if traffic_change < 0:  # Traffic reduction
-            # Reduced traffic -> reduced congestion
-            congestion_improvement = abs(traffic_change) * 0.8
+            # Reduced traffic -> reduced congestion (peak hours = bigger impact)
+            congestion_improvement = abs(traffic_change) * 0.8 * peak_multiplier
             
             # Calculate travel time savings
             time_saved_percent = congestion_improvement * ScenarioEngine.CONGESTION_DELAY_FACTOR
@@ -134,12 +235,13 @@ class ScenarioEngine:
                 "direction": "decrease",
                 "confidence": 0.82,
                 "explanation": f"Congestion reduction improves travel time by factor of {ScenarioEngine.CONGESTION_DELAY_FACTOR}. "
-                              f"Based on zone {zone} traffic patterns."
+                              f"Based on zone {zone} traffic patterns during {period_type} hours (impact multiplier: {peak_multiplier}x)."
             })
         
         # IMPACT 4: Adjacent Zone Spillover
         if abs(traffic_change) > 20:
-            spillover_traffic = traffic_change * ScenarioEngine.ZONE_SPILLOVER_FACTOR
+            # Peak hours = more spillover to adjacent zones
+            spillover_traffic = traffic_change * ScenarioEngine.ZONE_SPILLOVER_FACTOR * (1 + (peak_multiplier - 1) * 0.5)
             adjacent_zones = [z for z in ['A', 'B', 'C'] if z != zone]
             
             impacts.append({
@@ -150,13 +252,30 @@ class ScenarioEngine:
                 "direction": "increase" if spillover_traffic > 0 else "decrease",
                 "confidence": 0.65,
                 "explanation": f"Zone spillover factor: {ScenarioEngine.ZONE_SPILLOVER_FACTOR}. "
-                              f"Large restrictions in one zone can divert traffic to others."
+                              f"Large restrictions in one zone can divert traffic to others. "
+                              f"During {period_type} hours, spillover effects are {'amplified' if peak_multiplier > 1 else 'reduced'}."
             })
         
-        # IMPACT 5: Economic Impact (Commute Cost)
+        # IMPACT 5: Zone Baseline Assessment (ALWAYS SHOWN)
+        # This provides context about the selected zone and time window
+        zone_baseline_traffic = zone_info["traffic_density"] * (baseline_density / 60)  # Adjust for time of day
+        impacts.append({
+            "metric": f"Zone {zone} Baseline Assessment",
+            "baseline": f"{zone_info['congestion_level']} congestion area",
+            "predicted": f"Estimated {round(zone_baseline_traffic, 1)}% traffic density during {period_type} hours",
+            "change_percent": 0,  # This is informational
+            "direction": "baseline",
+            "confidence": 0.85,
+            "explanation": f"Zone {zone} is a {zone_info['congestion_level'].lower()} density area. "
+                          f"During {time_window} ({period_type}), baseline traffic is approximately {round(zone_baseline_traffic)}%. "
+                          f"AQI baseline factor for this zone: {zone_info['baseline_aqi_factor']}x. "
+                          f"Policy changes in this zone during these hours have a {peak_multiplier}x impact multiplier."
+        })
+        
+        # IMPACT 6: Economic Impact (Commute Cost)
         if traffic_change < 0:
             # Reduced congestion -> fuel savings
-            fuel_savings_percent = abs(traffic_change) * 0.4  # 40% efficiency
+            fuel_savings_percent = abs(traffic_change) * 0.4 * peak_multiplier  # Peak hours = more savings
             
             impacts.append({
                 "metric": "Commuter Fuel Cost",
@@ -165,7 +284,22 @@ class ScenarioEngine:
                 "change_percent": round(-fuel_savings_percent, 1),
                 "direction": "decrease",
                 "confidence": 0.70,
-                "explanation": "Reduced congestion improves fuel efficiency. Stop-and-go traffic wastes 20-30% more fuel."
+                "explanation": f"Reduced congestion improves fuel efficiency. Stop-and-go traffic wastes 20-30% more fuel. "
+                              f"During {period_type} hours, savings are {'higher' if peak_multiplier > 1 else 'standard'}."
+            })
+        elif traffic_change > 0:
+            # Increased congestion -> fuel waste
+            fuel_waste_percent = traffic_change * 0.4 * peak_multiplier
+            
+            impacts.append({
+                "metric": "Commuter Fuel Cost",
+                "baseline": "Current",
+                "predicted": f"{round(fuel_waste_percent, 1)}% increase",
+                "change_percent": round(fuel_waste_percent, 1),
+                "direction": "increase",
+                "confidence": 0.70,
+                "explanation": f"Increased congestion reduces fuel efficiency. "
+                              f"During {period_type} hours in Zone {zone}, impact on fuel consumption is {'amplified' if peak_multiplier > 1 else 'moderate'}."
             })
         
         # Calculate overall confidence (weighted average)

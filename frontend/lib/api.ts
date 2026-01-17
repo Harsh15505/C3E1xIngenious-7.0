@@ -133,9 +133,15 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/api/v1/scenario/simulate/${city}`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(scenarioInput),
+      body: JSON.stringify({
+        city: city,
+        ...scenarioInput
+      }),
     });
-    if (!response.ok) throw new Error('Simulation failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Simulation failed');
+    }
     return response.json();
   },
 
@@ -240,7 +246,7 @@ export const api = {
   // Chart data endpoints
   async getEnvironmentHistory(city: string, hours: number = 24) {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/cities/${city}/environment-data?limit=${hours}`,
+      `${API_BASE_URL}/api/v1/analytics/cities/${city}/environment-data?limit=${hours}`,
       { headers: getAuthHeaders() }
     );
     if (!response.ok) throw new Error('Failed to fetch environment history');
@@ -249,7 +255,7 @@ export const api = {
 
   async getTrafficData(city: string) {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/cities/${city}/traffic-data`,
+      `${API_BASE_URL}/api/v1/analytics/cities/${city}/traffic-data`,
       { headers: getAuthHeaders() }
     );
     if (!response.ok) throw new Error('Failed to fetch traffic data');

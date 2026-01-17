@@ -7,11 +7,15 @@ import { api } from '@/lib/api';
 
 export default function ScenarioPage() {
   const [selectedCity, setSelectedCity] = useState('Ahmedabad');
+  const [temperatureChange, setTemperatureChange] = useState(0);
+  const [aqiChange, setAqiChange] = useState(0);
+  const [trafficMultiplier, setTrafficMultiplier] = useState(1.0);
+  const [serviceDegradation, setServiceDegradation] = useState(0);
   const [scenarioInput, setScenarioInput] = useState({
-    temperature_change: 0,
-    aqi_change: 0,
-    traffic_multiplier: 1.0,
-    service_degradation: 0,
+    zone: 'A',
+    timeWindow: '08:00-11:00',
+    trafficDensityChange: 0,
+    heavyVehicleRestriction: false,
   });
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +29,11 @@ export default function ScenarioPage() {
     setSimulationResult(null);
 
     try {
-      const result = await api.simulateScenario(selectedCity.toLowerCase(), scenarioInput);
+      const enrichedInput = {
+        ...scenarioInput,
+        trafficDensityChange: (trafficMultiplier - 1.0) * 100,
+      };
+      const result = await api.simulateScenario(selectedCity.toLowerCase(), enrichedInput);
       setSimulationResult(result);
     } catch (err: any) {
       setError(err.message || 'Simulation failed');
@@ -35,11 +43,15 @@ export default function ScenarioPage() {
   };
 
   const resetScenario = () => {
+    setTemperatureChange(0);
+    setAqiChange(0);
+    setTrafficMultiplier(1.0);
+    setServiceDegradation(0);
     setScenarioInput({
-      temperature_change: 0,
-      aqi_change: 0,
-      traffic_multiplier: 1.0,
-      service_degradation: 0,
+      zone: 'A',
+      timeWindow: '08:00-11:00',
+      trafficDensityChange: 0,
+      heavyVehicleRestriction: false,
     });
     setSimulationResult(null);
     setError('');
@@ -49,35 +61,35 @@ export default function ScenarioPage() {
     <ProtectedRoute requireAdmin={true}>
       <Header />
       
-      <main className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
+      <main className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Scenario Builder</h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-1">
               Simulate "what-if" scenarios to predict system behavior and prepare response plans
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-6">
             {/* Input Panel */}
-            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <svg className="w-5 h-5 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
                 </svg>
                 Scenario Parameters
               </h2>
 
               {/* City Selector */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Select City
                 </label>
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                 >
                   {cities.map((city) => (
                     <option key={city} value={city}>
@@ -89,19 +101,22 @@ export default function ScenarioPage() {
 
               {/* Temperature Change */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Temperature Change: {scenarioInput.temperature_change > 0 ? '+' : ''}{scenarioInput.temperature_change}°C
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Temperature Change: {temperatureChange > 0 ? '+' : ''}{temperatureChange}°C
                 </label>
                 <input
                   type="range"
                   min="-10"
                   max="10"
-                  step="0.5"
-                  value={scenarioInput.temperature_change}
-                  onChange={(e) => setScenarioInput({...scenarioInput, temperature_change: parseFloat(e.target.value)})}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  step="1"
+                  value={temperatureChange}
+                  onChange={(e) => setTemperatureChange(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    accentColor: '#ef4444'
+                  }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span>-10°C</span>
                   <span>0°C</span>
                   <span>+10°C</span>
@@ -110,19 +125,22 @@ export default function ScenarioPage() {
 
               {/* AQI Change */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  AQI Change: {scenarioInput.aqi_change > 0 ? '+' : ''}{scenarioInput.aqi_change}
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  AQI Change: {aqiChange > 0 ? '+' : ''}{aqiChange}
                 </label>
                 <input
                   type="range"
                   min="-100"
                   max="100"
-                  step="5"
-                  value={scenarioInput.aqi_change}
-                  onChange={(e) => setScenarioInput({...scenarioInput, aqi_change: parseInt(e.target.value)})}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  step="10"
+                  value={aqiChange}
+                  onChange={(e) => setAqiChange(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    accentColor: '#ef4444'
+                  }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span>-100</span>
                   <span>0</span>
                   <span>+100</span>
@@ -131,19 +149,22 @@ export default function ScenarioPage() {
 
               {/* Traffic Multiplier */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Traffic Multiplier: {scenarioInput.traffic_multiplier}x
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Traffic Multiplier: {trafficMultiplier.toFixed(1)}x
                 </label>
                 <input
                   type="range"
                   min="0.5"
                   max="2.0"
                   step="0.1"
-                  value={scenarioInput.traffic_multiplier}
-                  onChange={(e) => setScenarioInput({...scenarioInput, traffic_multiplier: parseFloat(e.target.value)})}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  value={trafficMultiplier}
+                  onChange={(e) => setTrafficMultiplier(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    accentColor: '#ef4444'
+                  }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span>0.5x (Less)</span>
                   <span>1.0x (Normal)</span>
                   <span>2.0x (Heavy)</span>
@@ -152,48 +173,65 @@ export default function ScenarioPage() {
 
               {/* Service Degradation */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Service Degradation: {scenarioInput.service_degradation}%
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Service Degradation: {serviceDegradation}%
                 </label>
                 <input
                   type="range"
                   min="0"
                   max="50"
                   step="5"
-                  value={scenarioInput.service_degradation}
-                  onChange={(e) => setScenarioInput({...scenarioInput, service_degradation: parseInt(e.target.value)})}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  value={serviceDegradation}
+                  onChange={(e) => setServiceDegradation(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    accentColor: '#ef4444'
+                  }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span>0%</span>
                   <span>25%</span>
                   <span>50%</span>
                 </div>
               </div>
 
+              {/* Removed checkbox - keeping for potential backend compatibility */}
+              <input
+                type="hidden"
+                checked={scenarioInput.heavyVehicleRestriction}
+                onChange={(e) => setScenarioInput({...scenarioInput, heavyVehicleRestriction: e.target.checked})}
+              />
               {/* Action Buttons */}
-              <div className="flex space-x-3">
+              <div className="space-y-3">
                 <button
                   onClick={handleSimulate}
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {loading ? (
-                    <span className="flex items-center justify-center">
+                    <>
                       <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Simulating...
-                    </span>
+                    </>
                   ) : (
-                    'Run Simulation'
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                      Run Simulation
+                    </>
                   )}
                 </button>
                 <button
                   onClick={resetScenario}
-                  className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition"
+                  className="w-full py-3 px-6 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition flex items-center justify-center"
                 >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
                   Reset
                 </button>
               </div>
@@ -206,10 +244,10 @@ export default function ScenarioPage() {
             </div>
 
             {/* Results Panel */}
-            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <svg className="w-5 h-5 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
                 </svg>
                 Simulation Results
               </h2>
@@ -224,54 +262,63 @@ export default function ScenarioPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Predicted Risk Score */}
+                  {/* Overall Confidence */}
                   <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                    <p className="text-sm text-gray-600 mb-1">Predicted Risk Score</p>
+                    <p className="text-sm text-gray-600 mb-1">Simulation Confidence</p>
                     <p className="text-3xl font-bold text-orange-600">
-                      {(simulationResult.predicted_risk_score * 100).toFixed(1)}%
+                      {(simulationResult.overall_confidence * 100).toFixed(1)}%
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Current: {(simulationResult.current_risk_score * 100).toFixed(1)}% 
-                      {simulationResult.predicted_risk_score > simulationResult.current_risk_score ? 
-                        <span className="text-red-600 ml-2">↑ Increase</span> : 
-                        <span className="text-green-600 ml-2">↓ Decrease</span>
-                      }
+                      Based on {simulationResult.impacts?.length || 0} impact factors
                     </p>
                   </div>
 
-                  {/* Impact Summary */}
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-3">Impact Summary</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between p-3 bg-gray-50 rounded">
-                        <span className="text-sm text-gray-700">Environment Impact</span>
-                        <span className="text-sm font-medium">{simulationResult.impacts?.environment || 'Moderate'}</span>
-                      </div>
-                      <div className="flex justify-between p-3 bg-gray-50 rounded">
-                        <span className="text-sm text-gray-700">Traffic Impact</span>
-                        <span className="text-sm font-medium">{simulationResult.impacts?.traffic || 'Moderate'}</span>
-                      </div>
-                      <div className="flex justify-between p-3 bg-gray-50 rounded">
-                        <span className="text-sm text-gray-700">Service Impact</span>
-                        <span className="text-sm font-medium">{simulationResult.impacts?.services || 'Low'}</span>
+                  {/* Recommendation */}
+                  {simulationResult.recommendation && (
+                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                      <p className="text-sm font-medium text-gray-700 mb-1">Recommendation</p>
+                      <p className="text-sm text-gray-800">{simulationResult.recommendation}</p>
+                    </div>
+                  )}
+
+                  {/* Impact Details */}
+                  {simulationResult.impacts && simulationResult.impacts.length > 0 && (
+                    <div>
+                      <h3 className="font-medium text-gray-900 mb-3">Impact Analysis</h3>
+                      <div className="space-y-3">
+                        {simulationResult.impacts.map((impact: any, idx: number) => (
+                          <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-sm font-medium text-gray-900">{impact.metric}</span>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                impact.direction === 'decrease' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {impact.direction === 'decrease' ? '↓' : '↑'} {Math.abs(impact.change_percent)}%
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 mb-1">
+                              <span className="font-medium">Baseline:</span> {impact.baseline} → 
+                              <span className="font-medium ml-1">Predicted:</span> {impact.predicted}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-2">
+                              <span className="font-medium">Confidence:</span> {(impact.confidence * 100).toFixed(0)}%
+                            </div>
+                            {impact.explanation && (
+                              <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-300">
+                                {impact.explanation}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Recommendations */}
-                  {simulationResult.recommendations && simulationResult.recommendations.length > 0 && (
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-3">Recommendations</h3>
-                      <ul className="space-y-2">
-                        {simulationResult.recommendations.map((rec: string, idx: number) => (
-                          <li key={idx} className="flex items-start">
-                            <svg className="w-5 h-5 text-orange-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <span className="text-sm text-gray-700">{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Explanation */}
+                  {simulationResult.explanation && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <h3 className="font-medium text-gray-900 mb-2">Detailed Explanation</h3>
+                      <p className="text-sm text-gray-700 whitespace-pre-line">{simulationResult.explanation}</p>
                     </div>
                   )}
 
@@ -281,7 +328,7 @@ export default function ScenarioPage() {
                       Scenario ID: <span className="font-mono">{simulationResult.scenario_id}</span>
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Simulated at: {new Date(simulationResult.timestamp).toLocaleString()}
+                      Simulated at: {simulationResult.simulated_at ? new Date(simulationResult.simulated_at).toLocaleString() : 'Invalid Date'}
                     </p>
                   </div>
                 </div>
