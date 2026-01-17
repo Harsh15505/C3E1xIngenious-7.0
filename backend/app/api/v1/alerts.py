@@ -202,6 +202,12 @@ async def get_alert_summary(city: str):
         # By type
         risk = await Alert.filter(city=city_obj, is_active=True, type="risk").count()
         anomaly = await Alert.filter(city=city_obj, is_active=True, type="anomaly").count()
+        ml_anomaly = await Alert.filter(
+            city=city_obj,
+            is_active=True,
+            type="anomaly",
+            metadata__contains={"source": "ml"}
+        ).count()
         forecast = await Alert.filter(city=city_obj, is_active=True, type="forecast").count()
         system = await Alert.filter(city=city_obj, is_active=True, type="system").count()
         
@@ -221,6 +227,7 @@ async def get_alert_summary(city: str):
             "by_type": {
                 "risk": risk,
                 "anomaly": anomaly,
+                "ml_anomaly": ml_anomaly,
                 "forecast": forecast,
                 "system": system
             },
