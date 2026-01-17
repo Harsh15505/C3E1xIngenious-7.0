@@ -1,0 +1,275 @@
+// Prisma Schema for Urban Intelligence Platform
+// Database: PostgreSQL
+
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// CORE DATA MODELS
+// ========================================
+
+model City {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  state       String
+  population  Int?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  environmentData EnvironmentData[]
+  serviceData     ServiceData[]
+  trafficData     TrafficData[]
+  forecasts       Forecast[]
+  anomalies       Anomaly[]
+  alerts          Alert[]
+  riskScores      RiskScore[]
+  scenarios       Scenario[]
+}
+
+// ========================================
+// DATA INGESTION MODELS
+// ========================================
+
+model EnvironmentData {
+  id          String   @id @default(uuid())
+  cityId      String
+  city        City     @relation(fields: [cityId], references: [id])
+  
+  // Metrics
+  aqi         Float?
+  pm25        Float?
+  temperature Float?
+  rainfall    Float?
+  
+  // Metadata
+  timestamp   DateTime
+  source      String
+  isValidated Boolean  @default(false)
+  isFresh     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@index([cityId, timestamp])
+}
+
+model ServiceData {
+  id                    String   @id @default(uuid())
+  cityId                String
+  city                  City     @relation(fields: [cityId], references: [id])
+  
+  // Metrics
+  waterSupplyStress     Float?   // 0-1 scale
+  wasteCollectionEff    Float?   // 0-1 scale
+  powerOutageCount      Int?
+  
+  // Metadata
+  timestamp             DateTime
+  source                String
+  isValidated           Boolean  @default(false)
+  isFresh               Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  
+  @@index([cityId, timestamp])
+}
+
+model TrafficData {
+  id                    String   @id @default(uuid())
+  cityId                String
+  city                  City     @relation(fields: [cityId], references: [id])
+  
+  // Metrics
+  zone                  String   // A, B, C
+  densityPercent        Float    // 0-100
+  congestionLevel       String   // low, medium, high
+  heavyVehicleCount     Int?
+  
+  // Metadata
+  timestamp             DateTime
+  source                String
+  isValidated           Boolean  @default(false)
+  isFresh               Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  
+  @@index([cityId, zone, timestamp])
+}
+
+// ========================================
+// ANALYTICS MODELS
+// ========================================
+
+model Forecast {
+  id          String   @id @default(uuid())
+  cityId      String
+  city        City     @relation(fields: [cityId], references: [id])
+  
+  metricType  String   // aqi, pm25, waterStress, etc.
+  targetDate  DateTime
+  predictedValue Float
+  confidence  Float    // 0-1
+  
+  explanation String?
+  modelVersion String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([cityId, metricType, targetDate])
+}
+
+model Anomaly {
+  id          String   @id @default(uuid())
+  cityId      String
+  city        City     @relation(fields: [cityId], references: [id])
+  
+  metricType  String
+  detectedAt  DateTime
+  value       Float
+  expectedValue Float
+  deviation   Float    // Standard deviations
+  severity    String   // low, medium, high
+  
+  explanation String?
+  resolved    Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([cityId, detectedAt, resolved])
+}
+
+model RiskScore {
+  id          String   @id @default(uuid())
+  cityId      String
+  city        City     @relation(fields: [cityId], references: [id])
+  
+  category    String   // environment, services, overall
+  score       Float    // 0-1
+  level       String   // low, medium, high
+  
+  contributingFactors Json // Array of factor objects
+  
+  calculatedAt DateTime @default(now())
+  
+  @@index([cityId, category, calculatedAt])
+}
+
+// ========================================
+// ALERT MODELS
+// ========================================
+
+model Alert {
+  id          String   @id @default(uuid())
+  cityId      String
+  city        City     @relation(fields: [cityId], references: [id])
+  
+  type        String   // forecast, anomaly, system
+  severity    String   // info, warning, critical
+  audience    String   // public, internal, both
+  
+  title       String
+  message     String
+  
+  isActive    Boolean  @default(true)
+  resolvedAt  DateTime?
+  
+  metadata    Json?    // Additional context
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([cityId, isActive, audience])
+}
+
+// ========================================
+// SCENARIO ENGINE MODELS
+// ========================================
+
+model Scenario {
+  id          String   @id @default(uuid())
+  cityId      String
+  city        City     @relation(fields: [cityId], references: [id])
+  
+  name        String
+  description String?
+  
+  // Inputs
+  inputs      Json     // Full scenario configuration
+  
+  // Outputs
+  outputs     Json     // Impact predictions
+  
+  confidence  Float?   // Overall confidence
+  explanation String?
+  
+  createdBy   String?  // User ID (future)
+  createdAt   DateTime @default(now())
+  
+  @@index([cityId, createdAt])
+}
+
+// ========================================
+// TRUST & GOVERNANCE MODELS
+// ========================================
+
+model DataSource {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  type            String   // environment, services, traffic
+  
+  expectedFrequency Int    // minutes
+  lastSeenAt      DateTime?
+  isOnline        Boolean  @default(true)
+  
+  failureCount    Int      @default(0)
+  totalIngestions Int      @default(0)
+  
+  metadata        Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CitizenRequest {
+  id          String   @id @default(uuid())
+  
+  type        String   // data-request, update-request
+  cityName    String
+  
+  requesterName String?
+  requesterEmail String?
+  
+  subject     String
+  details     String
+  
+  status      String   @default("pending") // pending, reviewed, resolved
+  
+  response    String?
+  respondedAt DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([status, cityName])
+}
+
+model SystemAuditLog {
+  id          String   @id @default(uuid())
+  
+  category    String   // ingestion, analytics, alert, scenario
+  action      String
+  
+  cityId      String?
+  
+  details     Json?
+  success     Boolean
+  
+  errorMessage String?
+  
+  timestamp   DateTime @default(now())
+  
+  @@index([category, timestamp])
+}
