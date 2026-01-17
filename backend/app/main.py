@@ -81,12 +81,14 @@ async def scheduler_status():
         "jobs": get_job_status()
     }
 
-# Import and include routers (will be added in phases)
-# from app.api.v1 import ingest, metrics, analytics, scenario, alerts, citizen, system
-# app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["ingestion"])
+# Import and include routers
+from app.api.v1 import ingest, scenario, system
+app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["ingestion"])
+app.include_router(scenario.router, prefix="/api/v1/scenario", tags=["scenario"])
+app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
+# Will add more routers in upcoming phases:
+# from app.api.v1 import metrics, analytics, alerts, citizen
 # app.include_router(metrics.router, prefix="/api/v1/metrics", tags=["metrics"])
 # app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
-# app.include_router(scenario.router, prefix="/api/v1/scenario", tags=["scenario"])
 # app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["alerts"])
 # app.include_router(citizen.router, prefix="/api/v1/citizen", tags=["citizen"])
-# app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
