@@ -145,15 +145,20 @@ async def generate_alerts_job():
     """Generate and dispatch alerts (every 30 min)"""
     logger.info(f"[CRON] Generating alerts at {datetime.utcnow()}")
     
-    # TODO: Implement
-    # - Check forecast thresholds
-    # - Check anomalies
-    # - Generate appropriate alerts
-    
     try:
         from app.modules.alerts.generator import AlertGenerator
-        # Implementation in Phase 5
-        pass
+        from app.models import City
+        
+        cities = await City.all()
+        total_alerts = 0
+        
+        for city in cities:
+            result = await AlertGenerator.generate_all_alerts(city.name)
+            if "alerts_created" in result:
+                total_alerts += result["alerts_created"]
+        
+        logger.info(f"✅ Alert generation completed: {total_alerts} new alerts")
+        
     except Exception as e:
         logger.error(f"Alert generation job failed: {e}")
 
