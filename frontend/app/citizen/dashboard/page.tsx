@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
 import { api } from '@/lib/api';
+import EnvironmentChart from '@/components/charts/EnvironmentChart';
 
 export default function CitizenDashboard() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [cityHealth, setCityHealth] = useState<any>(null);
+  const [environmentData, setEnvironmentData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,6 +27,10 @@ export default function CitizenDashboard() {
       // Load system health
       const health = await api.getHealth();
       setCityHealth(health);
+
+      // Load environment data for chart
+      const envData = await api.getEnvironmentHistory('ahmedabad', 24);
+      setEnvironmentData(envData.data || []);
     } catch (error) {
       console.error('Failed to load dashboard:', error);
     } finally {
@@ -176,6 +182,21 @@ export default function CitizenDashboard() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Environment Trends Chart */}
+          <div className="bg-white rounded-lg shadow-md">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Environment Trends (24 Hours)</h2>
+              <p className="text-sm text-gray-500 mt-1">Temperature and Air Quality Index for Ahmedabad</p>
+            </div>
+            <div className="p-6">
+              {environmentData.length > 0 ? (
+                <EnvironmentChart data={environmentData} />
+              ) : (
+                <p className="text-gray-500 text-center py-8">No data available</p>
+              )}
+            </div>
           </div>
 
           {/* Information Section */}

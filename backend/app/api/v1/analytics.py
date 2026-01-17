@@ -140,3 +140,73 @@ async def get_risk_history(
         ]
     }
 
+
+@router.get("/cities/{city}/environment-data")
+async def get_environment_history(
+    city: str,
+    limit: int = Query(24, le=168, description="Number of hours (max 168 = 7 days)")
+):
+    """
+    Get historical environment data for charts
+    Returns last N hours of temperature, humidity, AQI data
+    """
+    from app.models import EnvironmentData
+    
+    city_obj = await City.filter(name__iexact=city).first()
+    if not city_obj:
+        raise HTTPException(status_code=404, detail=f"City '{city}' not found")
+    
+    data = await EnvironmentData.filter(city=city_obj).order_by('-timestamp').limit(limit)
+    
+    return {
+        "city": city,
+        "data": [
+            {
+                "timestamp": d.timestamp.isoformat(),
+                "temperature": d.temperature,
+                "humidity": d.humidity,
+                "aqi": d.aqi,
+                "pm25": d.pm25,
+                "pm10": d.pm10
+            }
+            for d in reversed(data)  # Oldest first for chart display
+        ]
+    }
+
+
+@router.get("/cities/{city}/traffic-data")
+async def get_traffic_data(
+    city: str
+):
+    """
+    Get current traffic data by zones for charts
+    Returns latest traffic congestion for all zones
+    """
+    from app.models import TrafficData
+    from datetime import datetime, timedelta
+    
+    city_obj = await City.filter(name__iexact=city).first()
+    if not city_obj:
+        raise HTTPException(status_code=404, detail=f"City '{city}' not found")
+    
+    # Get latest traffic data (within last 2 hours)
+    cutoff = datetime.now() - timedelta(hours=2)
+    data = await TrafficData.filter(
+        city=city_obj,
+        timestamp__gte=cutoff
+    ).order_by('-timestamp')
+    
+    # Group by zone, get latest for each
+    zones_data = {}
+    for d in data:
+        if d.zone not in zones_data:
+            zones_data[d.zone] = {
+                "zone": d.zone,
+                "congestion": round(d.congestion_level * 100, 1),  # Convert to percentage
+                "timestamp": d.timestamp.isoformat()
+            }
+    
+    return {
+        "city": city,
+        "zones": list(zones_data.values())
+    }

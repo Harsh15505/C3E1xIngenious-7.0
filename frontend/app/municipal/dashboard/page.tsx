@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
 import { api, getSeverityColor, formatTimestamp } from '@/lib/api';
+import EnvironmentChart from '@/components/charts/EnvironmentChart';
+import TrafficChart from '@/components/charts/TrafficChart';
+import AlertDistribution from '@/components/charts/AlertDistribution';
 
 export default function MunicipalDashboard() {
   const [selectedCity, setSelectedCity] = useState('Ahmedabad');
@@ -11,6 +14,8 @@ export default function MunicipalDashboard() {
   const [alerts, setAlerts] = useState<any>(null);
   const [riskScore, setRiskScore] = useState<any>(null);
   const [anomalies, setAnomalies] = useState<any>(null);
+  const [environmentData, setEnvironmentData] = useState<any[]>([]);
+  const [trafficData, setTrafficData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,6 +45,13 @@ export default function MunicipalDashboard() {
       // Load anomalies
       const anomaliesData = await api.detectAnomalies(selectedCity.toLowerCase());
       setAnomalies(anomaliesData);
+
+      // Load chart data
+      const envData = await api.getEnvironmentHistory(selectedCity.toLowerCase(), 24);
+      setEnvironmentData(envData.data || []);
+
+      const traffic = await api.getTrafficData(selectedCity.toLowerCase());
+      setTrafficData(traffic.zones || []);
 
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -282,8 +294,49 @@ export default function MunicipalDashboard() {
             </div>
           </div>
         )}
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          {/* Environment Chart */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Environment Trends (24h)</h2>
+            </div>
+            <div className="p-6">
+              {environmentData.length > 0 ? (
+                <EnvironmentChart data={environmentData} />
+              ) : (
+                <p className="text-gray-500 text-center py-8">No data available</p>
+              )}
+            </div>
+          </div>
+
+          {/* Traffic Chart */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Traffic Congestion by Zone</h2>
+            </div>
+            <div className="p-6">
+              {trafficData.length > 0 ? (
+                <TrafficChart data={trafficData} />
+              ) : (
+                <p className="text-gray-500 text-center py-8">No data available</p>
+              )}
+            </div>
+          </div>
+
+          {/* Alert Distribution */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Alert Distribution</h2>
+            </div>
+            <div className="p-6">
+              {alerts && alerts.alerts && alerts.alerts.length > 0 ? (
+                <AlertDistribution alerts={alerts.alerts} />
+              ) : (
+                <p className="text-gray-500 text-center py-8">No alerts to display</p>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </ProtectedRoute>
-  );
 }
