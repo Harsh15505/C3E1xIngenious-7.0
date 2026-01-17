@@ -199,14 +199,11 @@ async def city_websocket(websocket: WebSocket, city: str):
         logger.error(f"WebSocket error for city {city}: {e}")
 
 # Import and include routers
-from app.api.v1 import ingest, scenario, system, analytics, alerts, auth
+from app.api.v1 import ingest, scenario, system, analytics, alerts, auth, citizen
 app.include_router(auth.router, prefix="/api/v1", tags=["authentication"])
 app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["ingestion"])
 app.include_router(scenario.router, prefix="/api/v1/scenario", tags=["scenario"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
 app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
-# Will add more routers in upcoming phases:
-# from app.api.v1 import metrics, citizen
-# app.include_router(metrics.router, prefix="/api/v1/metrics", tags=["metrics"])
-# app.include_router(citizen.router, prefix="/api/v1/citizen", tags=["citizen"])
+app.include_router(citizen.router, prefix="/api/v1/citizen", tags=["citizen-participation"])

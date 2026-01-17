@@ -11,12 +11,12 @@ from app.models import City, EnvironmentData, TrafficData, ServiceData, RiskScor
 class RiskScorer:
     """Calculates urban risk scores based on multiple factors"""
     
-    # Risk component weights
+    # Risk component weights (calibrated for Indian urban contexts where traffic→AQI is primary concern)
     WEIGHTS = {
-        "environment": 0.35,    # Air quality, pollution
-        "traffic": 0.25,        # Congestion, mobility
-        "services": 0.25,       # Water, power infrastructure
-        "anomalies": 0.15       # Recent anomalies
+        "environment": 0.30,    # Air quality, pollution
+        "traffic": 0.30,        # Congestion, mobility (INCREASED: traffic is primary driver of AQI in Indian cities)
+        "services": 0.20,       # Water, power infrastructure
+        "anomalies": 0.20       # Recent anomalies
     }
     
     # Risk level thresholds

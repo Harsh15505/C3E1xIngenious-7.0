@@ -270,6 +270,90 @@ export const api = {
     if (!response.ok) throw new Error('Failed to fetch audit logs');
     return response.json();
   },
+
+  // ========================================
+  // CITIZEN PARTICIPATION APIs
+  // ========================================
+  
+  // Dataset Requests
+  async submitDatasetRequest(data: {
+    citizenName: string;
+    citizenEmail: string;
+    datasetType: 'environment' | 'traffic' | 'services' | 'all';
+    reason: 'research' | 'academic' | 'civic_project' | 'journalism' | 'other';
+    description: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/citizen/dataset-requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to submit dataset request');
+    return response.json();
+  },
+
+  async getDatasetRequests(statusFilter?: string) {
+    const url = statusFilter 
+      ? `${API_BASE_URL}/api/v1/citizen/dataset-requests?status=${statusFilter}`
+      : `${API_BASE_URL}/api/v1/citizen/dataset-requests`;
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    if (!response.ok) throw new Error('Failed to fetch dataset requests');
+    return response.json();
+  },
+
+  async updateDatasetRequest(requestId: string, data: {
+    status: 'pending' | 'approved' | 'rejected';
+    adminNotes?: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/citizen/dataset-requests/${requestId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update dataset request');
+    return response.json();
+  },
+
+  // Data Correction Requests
+  async submitCorrectionRequest(data: {
+    citizenName: string;
+    citizenEmail: string;
+    dataType: 'environment' | 'traffic' | 'services';
+    city: string;
+    issueDescription: string;
+    suggestedCorrection?: any;
+    supportingEvidence?: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/citizen/correction-requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to submit correction request');
+    return response.json();
+  },
+
+  async getCorrectionRequests(statusFilter?: string, dataType?: string) {
+    let url = `${API_BASE_URL}/api/v1/citizen/correction-requests?`;
+    if (statusFilter) url += `status=${statusFilter}&`;
+    if (dataType) url += `data_type=${dataType}&`;
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    if (!response.ok) throw new Error('Failed to fetch correction requests');
+    return response.json();
+  },
+
+  async updateCorrectionRequest(requestId: string, data: {
+    status: 'pending' | 'investigating' | 'resolved' | 'rejected';
+    adminResponse?: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/citizen/correction-requests/${requestId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update correction request');
+    return response.json();
+  },
 };
 
 // ========================================

@@ -318,3 +318,67 @@ class User(Model):
     def __str__(self):
         return f"{self.full_name} ({self.email})"
 
+
+# ========================================
+# CITIZEN PARTICIPATION MODELS
+# ========================================
+
+class DatasetRequest(Model):
+    """Citizen requests for dataset access"""
+    id = fields.UUIDField(pk=True)
+    
+    # Requester info
+    citizen_name = fields.CharField(max_length=200)
+    citizen_email = fields.CharField(max_length=255)
+    
+    # Request details
+    dataset_type = fields.CharField(max_length=50)  # environment, traffic, services, all
+    reason = fields.CharField(max_length=50)  # research, academic, civic_project, journalism, other
+    description = fields.TextField()
+    
+    # Status tracking
+    status = fields.CharField(max_length=20, default='pending')  # pending, approved, rejected
+    admin_notes = fields.TextField(null=True)
+    reviewed_by = fields.ForeignKeyField("models.User", related_name="dataset_reviews", null=True)
+    reviewed_at = fields.DatetimeField(null=True)
+    
+    # Metadata
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "dataset_requests"
+        indexes = ["status", "created_at"]
+
+
+class DataCorrectionRequest(Model):
+    """Citizen requests for data corrections"""
+    id = fields.UUIDField(pk=True)
+    
+    # Requester info
+    citizen_name = fields.CharField(max_length=200)
+    citizen_email = fields.CharField(max_length=255)
+    
+    # Issue details
+    data_type = fields.CharField(max_length=50)  # environment, traffic, services
+    city = fields.ForeignKeyField("models.City", related_name="correction_requests")
+    issue_description = fields.TextField()
+    suggested_correction = fields.JSONField(null=True)
+    
+    # Evidence/supporting data
+    supporting_evidence = fields.TextField(null=True)
+    
+    # Status tracking
+    status = fields.CharField(max_length=20, default='pending')  # pending, investigating, resolved, rejected
+    admin_response = fields.TextField(null=True)
+    reviewed_by = fields.ForeignKeyField("models.User", related_name="correction_reviews", null=True)
+    reviewed_at = fields.DatetimeField(null=True)
+    
+    # Metadata
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "data_correction_requests"
+        indexes = ["status", "created_at", "data_type"]
+

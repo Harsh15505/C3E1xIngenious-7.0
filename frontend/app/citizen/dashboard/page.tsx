@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import { api } from '@/lib/api';
 import { authUtils } from '@/lib/auth';
@@ -28,12 +29,14 @@ export default function CitizenDashboard() {
   const [cityHealth, setCityHealth] = useState<CityHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
 
   useEffect(() => {
     // Check if user is logged in
-    const userInfo = authUtils.getUserInfo();
-    if (userInfo && userInfo.email) {
+    const user = authUtils.getUserInfo();
+    if (user && user.email) {
       setIsLoggedIn(true);
+      setUserInfo(user);
     }
 
     loadDashboardData();
@@ -298,46 +301,58 @@ export default function CitizenDashboard() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Citizen Actions</h2>
             <div className="grid md:grid-cols-4 gap-4">
-              <button className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
+              <Link href="/citizen/report-issue" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
                   <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">Report Issue</h3>
-                <p className="text-sm text-gray-600">Submit a concern or problem</p>
-              </button>
+                <h3 className="font-semibold text-gray-900 mb-1">Report Data Issue</h3>
+                <p className="text-sm text-gray-600">Flag incorrect data</p>
+              </Link>
 
-              <button className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
+              <Link href="/citizen/dataset-request" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
                   <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">View City Data</h3>
-                <p className="text-sm text-gray-600">Access public city metrics</p>
-              </button>
+                <h3 className="font-semibold text-gray-900 mb-1">Request Dataset</h3>
+                <p className="text-sm text-gray-600">Access public city data</p>
+              </Link>
 
-              <button className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
+              <Link href="/citizen/alerts" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-3">
                   <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">Subscribe Alerts</h3>
-                <p className="text-sm text-gray-600">Get notifications for your area</p>
-              </button>
+                <h3 className="font-semibold text-gray-900 mb-1">View All Alerts</h3>
+                <p className="text-sm text-gray-600">See all city notifications</p>
+              </Link>
 
-              <button className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-1">Learn More</h3>
-                <p className="text-sm text-gray-600">About our AI system</p>
-              </button>
+              {userInfo ? (
+                <Link href="/citizen/simulator" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Scenario Simulator</h3>
+                  <p className="text-sm text-gray-600">Test policy changes</p>
+                </Link>
+              ) : (
+                <Link href="/login" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow text-left">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Login for More</h3>
+                  <p className="text-sm text-gray-600">Access simulator & more</p>
+                </Link>
+              )}
             </div>
           </div>
 
