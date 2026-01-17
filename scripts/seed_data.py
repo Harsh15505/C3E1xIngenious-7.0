@@ -42,8 +42,10 @@ async def seed_cities():
     
     logger.info("Seeding cities...")
     for city_data in cities_data:
+        # Remove 'name' from city_data for defaults since it's used as filter
+        name = city_data.pop("name")
         city, created = await City.get_or_create(
-            name=city_data["name"],
+            name=name,
             defaults=city_data
         )
         if created:
@@ -69,8 +71,10 @@ async def seed_data_sources():
     
     logger.info("Seeding data sources...")
     for source_data in sources_data:
+        # Remove 'name' from source_data for defaults since it's used as filter
+        name = source_data.pop("name")
         source, created = await DataSource.get_or_create(
-            name=source_data["name"],
+            name=name,
             defaults=source_data
         )
         if created:
@@ -82,9 +86,35 @@ async def seed_data_sources():
 async def main():
     """Main seeding function"""
     try:
+        import ssl
+        from pathlib import Path
+        
+        # Load CA certificate for Aiven PostgreSQL
+        ca_cert_path = Path(__file__).parent.parent / 'backend' / 'ca-certificate.crt'
+        ssl_context = ssl.create_default_context(cafile=str(ca_cert_path))
+        
         await Tortoise.init(
-            db_url=settings.DATABASE_URL,
-            modules={"models": ["backend.app.models"]}
+            config={
+                'connections': {
+                    'default': {
+                        'engine': 'tortoise.backends.asyncpg',
+                        'credentials': {
+                            'host': settings.DB_HOST,
+                            'port': settings.DB_PORT,
+                            'user': settings.DB_USER,
+                            'password': settings.DB_PASSWORD,
+                            'database': settings.DB_NAME,
+                            'ssl': ssl_context
+                        }
+                    }
+                },
+                'apps': {
+                    'models': {
+                        'models': ['backend.app.models'],
+                        'default_connection': 'default',
+                    }
+                }
+            }
         )
         await Tortoise.generate_schemas()
         logger.info("🗄️  Connected to database")

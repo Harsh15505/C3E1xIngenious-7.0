@@ -7,8 +7,17 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str = "postgres://postgres:postgres@localhost:5432/urban_intelligence"
+    # Database (Aiven PostgreSQL)
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_USER: str = "postgres"
+    DB_PASSWORD: str = "postgres"
+    DB_NAME: str = "urban_intelligence"
+    DATABASE_URL: str = ""  # Constructed from components above
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
     
     # API
     API_V1_PREFIX: str = "/api/v1"

@@ -71,15 +71,35 @@ async def run_forecasting_job():
     """Run forecasting models for all cities (every 1 hour)"""
     logger.info(f"[CRON] Running forecasting at {datetime.utcnow()}")
     
-    # TODO: Implement
-    # - Fetch latest data
-    # - Run forecasting models
-    # - Store predictions in database
-    
     try:
-        from app.modules.analytics.forecaster import Forecaster
-        # Implementation in Phase 3
-        pass
+        from app.modules.analytics.forecaster import TimeSeriesForecaster
+        from app.models import City
+        
+        cities = await City.all()
+        total_forecasts = 0
+        
+        for city in cities:
+            # Forecast environment metrics
+            env_forecasts = await TimeSeriesForecaster.forecast_environment_metrics(city.name)
+            if env_forecasts:
+                saved = await TimeSeriesForecaster.save_forecasts_to_db(env_forecasts)
+                total_forecasts += saved
+            
+            # Forecast service stress
+            service_forecasts = await TimeSeriesForecaster.forecast_service_stress(city.name)
+            if service_forecasts:
+                saved = await TimeSeriesForecaster.save_forecasts_to_db(service_forecasts)
+                total_forecasts += saved
+            
+            # Forecast traffic for each zone
+            for zone in ['A', 'B', 'C']:
+                traffic_forecasts = await TimeSeriesForecaster.forecast_traffic_congestion(city.name, zone)
+                if traffic_forecasts:
+                    saved = await TimeSeriesForecaster.save_forecasts_to_db(traffic_forecasts)
+                    total_forecasts += saved
+        
+        logger.info(f"✅ Forecasting completed: {total_forecasts} forecasts generated")
+        
     except Exception as e:
         logger.error(f"Forecasting job failed: {e}")
 
