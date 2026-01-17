@@ -278,3 +278,32 @@ class SystemAuditLog(Model):
     class Meta:
         table = "system_audit_logs"
         indexes = ["category", "timestamp"]
+
+
+# ========================================
+# USER & AUTHENTICATION MODELS (Phase 5.5)
+# ========================================
+
+class User(Model):
+    id = fields.UUIDField(pk=True)
+    
+    email = fields.CharField(max_length=255, unique=True)
+    password_hash = fields.CharField(max_length=255)
+    
+    full_name = fields.CharField(max_length=200)
+    role = fields.CharField(max_length=20)  # admin, citizen
+    
+    is_active = fields.BooleanField(default=True)
+    is_verified = fields.BooleanField(default=False)
+    
+    last_login = fields.DatetimeField(null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "users"
+        indexes = ["email", "role"]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.email})"
+
