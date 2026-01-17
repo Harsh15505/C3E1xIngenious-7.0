@@ -5,11 +5,46 @@ Urban Intelligence Platform
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import logging
+
+# Import scheduler
+from app.scheduler import start_scheduler, stop_scheduler, get_job_status
+from app.database import connect_db, disconnect_db
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events"""
+    # Startup
+    logger.info("🚀 Starting Urban Intelligence Platform...")
+    
+    # Connect to database
+    await connect_db()
+    logger.info("✅ Database connected")
+    
+    # Start scheduler
+    start_scheduler()
+    logger.info("✅ Scheduler started")
+    
+    yield
+    
+    # Shutdown
+    logger.info("🛑 Shutting down...")
+    stop_scheduler()
+    await disconnect_db()
+    logger.info("✅ Shutdown complete")
+
 
 app = FastAPI(
     title="Urban Intelligence Platform",
     description="Early risk prediction and decision support for urban systems",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -34,7 +69,16 @@ async def root():
 async def health_check():
     return {
         "status": "healthy",
-        "service": "api"
+        "service": "api",
+        "scheduler": "running"
+    }
+
+@app.get("/scheduler/status")
+async def scheduler_status():
+    """Get status of all scheduled jobs"""
+    return {
+        "scheduler": "running",
+        "jobs": get_job_status()
     }
 
 # Import and include routers (will be added in phases)

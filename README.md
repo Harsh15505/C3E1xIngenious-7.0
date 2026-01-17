@@ -197,15 +197,33 @@ prisma generate
 # Run database migrations
 prisma migrate dev --name init
 
-# Start FastAPI server
+# Seed initial data (Mumbai and Delhi + data sources)
+python ../scripts/seed_data.py
+
+# Start FastAPI server (includes scheduler)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Backend runs at:** `http://localhost:8000`  
 **API docs at:** `http://localhost:8000/docs`  
-**Health check:** `http://localhost:8000/health`
+**Health check:** `http://localhost:8000/health`  
+**Scheduler status:** `http://localhost:8000/scheduler/status`
 
-### 4️⃣ Frontend Setup
+### 4️⃣ Optional: Run Sensor Simulator
+
+Open a **new terminal** to simulate push-style data ingestion:
+
+```bash
+# Continuous simulation (pushes data every 30 seconds)
+python scripts/simulate_sensors.py
+
+# OR push single batch for testing
+python scripts/simulate_sensors.py once
+```
+
+This simulates IoT sensors pushing data to the API (push-style ingestion).
+
+### 5️⃣ Frontend Setup
 
 Open a **new terminal**:
 
@@ -226,14 +244,17 @@ npm run dev
 
 **Frontend runs at:** `http://localhost:3000`
 
-### 5️⃣ Verify Installation
+### 6️⃣ Verify Installation
 
 ```bash
 # Test API health
 curl http://localhost:8000/health
 
 # Expected response:
-# {"status":"healthy","service":"api"}
+# {"status":"healthy","service":"api","scheduler":"running"}
+
+# Check scheduler jobs
+curl http://localhost:8000/scheduler/status
 ```
 
 ---
@@ -277,6 +298,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - **FastAPI** - Modern, fast Python web framework
 - **PostgreSQL** - Robust relational database
 - **Prisma ORM** - Type-safe database client with migrations
+- **APScheduler** - Advanced Python scheduler for cron jobs
 - **Pydantic** - Data validation and settings management
 - **Pandas** - Data manipulation and analysis
 - **NumPy** - Numerical computing
@@ -371,6 +393,23 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ---
 
 ## 🎯 Core Features
+
+### ✅ Data Ingestion (Mixed Model)
+
+**Push-Style (Real-time):**
+- IoT sensors push data directly to API endpoints
+- Immediate validation and processing
+- Real-time data availability for dashboards
+
+**Pull-Style (Scheduled via CronJobs):**
+- **Every 15 min:** Environment data (AQI, weather) from external APIs
+- **Every 30 min:** Traffic & service data from city systems
+- **Every 1 hour:** Run forecasting models
+- **Every 2 hours:** Anomaly detection
+- **Every 6 hours:** Risk score calculation
+- **Every 5 min:** System health checks
+
+Built with **APScheduler** for reliable background task execution.
 
 ### ✅ Data Governance
 - **Central Data Office (CDO) validation layer** - Validates all incoming data
