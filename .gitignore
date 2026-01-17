@@ -64,3 +64,9 @@ htmlcov/
 # Misc
 *.bak
 .cache/
+
+# Documentation (testing notes)
+testing.md
+TESTING.md
+
+

@@ -1,16 +1,22 @@
 """
-Database Connection
+Database Connection using Tortoise ORM
 """
 
-from prisma import Prisma
+from tortoise import Tortoise
+from app.config import get_settings
 
-# Global database client
-db = Prisma()
+settings = get_settings()
 
-async def connect_db():
-    """Connect to database"""
-    await db.connect()
 
-async def disconnect_db():
-    """Disconnect from database"""
-    await db.disconnect()
+async def init_db():
+    """Initialize database connection"""
+    await Tortoise.init(
+        db_url=settings.DATABASE_URL,
+        modules={"models": ["app.models"]}
+    )
+    await Tortoise.generate_schemas()
+
+
+async def close_db():
+    """Close database connections"""
+    await Tortoise.close_connections()

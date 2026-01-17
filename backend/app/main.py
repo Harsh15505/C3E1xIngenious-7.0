@@ -10,7 +10,7 @@ import logging
 
 # Import scheduler
 from app.scheduler import start_scheduler, stop_scheduler, get_job_status
-from app.database import connect_db, disconnect_db
+from app.database import init_db, close_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,8 +23,8 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Starting Urban Intelligence Platform...")
     
-    # Connect to database
-    await connect_db()
+    # Initialize database
+    await init_db()
     logger.info("✅ Database connected")
     
     # Start scheduler
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("🛑 Shutting down...")
     stop_scheduler()
-    await disconnect_db()
+    await close_db()
     logger.info("✅ Shutdown complete")
 
 

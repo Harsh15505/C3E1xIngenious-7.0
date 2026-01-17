@@ -40,31 +40,26 @@ cd backend
 # Linux/Mac: sudo service postgresql start
 
 # Test database connection
-python -c "from app.database import db; import asyncio; asyncio.run(db.connect()); print('✅ Connected'); asyncio.run(db.disconnect())"
+python -c "from tortoise import Tortoise; import asyncio; asyncio.run(Tortoise.init(db_url='postgresql://postgres:postgres@localhost:5432/urban_intelligence', modules={'models': ['app.models']})); print('✅ Connected'); asyncio.run(Tortoise.close_connections())"
 ```
 
 **Expected:** `✅ Connected` message
 
-### 2. Prisma Schema Validation
+### 2. Database Schema Test
 
 ```bash
 cd backend
 
-# Validate schema
-prisma validate
+# Install dependencies first
+pip install -r requirements.txt
 
-# Generate client
-prisma generate
-
-# Create migration
-prisma migrate dev --name init
+# Schema will be auto-generated when you run seed script or start server
+# No separate migration command needed!
 ```
 
 **Expected Results:**
-- ✅ Schema valid
-- ✅ Client generated in `node_modules/.prisma`
-- ✅ Migration successful
-- ✅ Database tables created
+- ✅ All dependencies installed
+- ✅ Tortoise ORM ready
 
 ### 3. Database Seeding Test
 
@@ -207,7 +202,7 @@ Pushing single batch of sensor data...
 ## Phase 1 Summary Checklist
 
 - [ ] Database connected successfully
-- [ ] Prisma schema valid and migrated
+- [ ] Tortoise ORM dependencies installed
 - [ ] Ahmedabad and Gandhinagar cities seeded
 - [ ] 10 data sources seeded
 - [ ] FastAPI server starts without errors
@@ -235,11 +230,11 @@ cat backend/.env
 psql -U postgres -d urban_intelligence
 ```
 
-### Issue: Prisma client not found
+### Issue: Tortoise models not found
 
 ```bash
 cd backend
-prisma generate
+pip install -r requirements.txt
 ```
 
 ### Issue: Scheduler not starting

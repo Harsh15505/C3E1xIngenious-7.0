@@ -28,7 +28,7 @@ This platform enables municipal data officers to:
 
 #### Backend
 - **FastAPI** (Python)
-- **PostgreSQL** + **Prisma ORM**
+- **PostgreSQL** + **Tortoise ORM**
 - Pandas, NumPy, scikit-learn for analytics
 
 #### Frontend
@@ -191,11 +191,8 @@ pip install -r requirements.txt
 copy .env.example .env
 # Edit .env and set your DATABASE_URL
 
-# Generate Prisma client
-prisma generate
-
-# Run database migrations
-prisma migrate dev --name init
+# Initialize database (creates tables automatically on first run)
+# Tables are auto-created when server starts
 
 # Seed initial data (Ahmedabad and Gandhinagar + data sources)
 python ../scripts/seed_data.py
@@ -297,7 +294,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ### Backend
 - **FastAPI** - Modern, fast Python web framework
 - **PostgreSQL** - Robust relational database
-- **Prisma ORM** - Type-safe database client with migrations
+- **Tortoise ORM** - Async ORM for Python (Django-like API)
+- **Aerich** - Database migration tool for Tortoise
 - **APScheduler** - Advanced Python scheduler for cron jobs
 - **Pydantic** - Data validation and settings management
 - **Pandas** - Data manipulation and analysis
@@ -317,7 +315,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - **PostgreSQL 14+** - Database server
 
 ### Development Tools
-- **Prisma CLI** - Database migrations and schema management
+- **Aerich** - Database migrations for Tortoise ORM
 - **pytest** - Testing framework
 - **ESLint** - Code linting for frontend
 

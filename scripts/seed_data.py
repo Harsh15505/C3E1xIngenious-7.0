@@ -4,18 +4,26 @@ Seeds the database with initial cities and data sources
 """
 
 import asyncio
-from prisma import Prisma
+from tortoise import Tortoise
 import logging
+import sys
+import os
+
+# Add parent directory to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from backend.app.models import City, DataSource
+from backend.app.config import get_settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-db = Prisma()
+settings = get_settings()
 
 
 async def seed_cities():
     """Seed initial cities"""
-    cities = [
+    cities_data = [
         {
             "name": "Ahmedabad",
             "state": "Gujarat",
@@ -33,48 +41,52 @@ async def seed_cities():
     ]
     
     logger.info("Seeding cities...")
-    for city_data in cities:
-        city = await db.city.upsert(
-            where={"name": city_data["name"]},
-            data={
-                "create": city_data,
-                "update": city_data
-            }
+    for city_data in cities_data:
+        city, created = await City.get_or_create(
+            name=city_data["name"],
+            defaults=city_data
         )
-        logger.info(f"✅ City: {city.name}")
+        if created:
+            logger.info(f"✅ City created: {city.name}")
+        else:
+            logger.info(f"ℹ️  City exists: {city.name}")
 
 
 async def seed_data_sources():
     """Seed data sources for tracking"""
-    sources = [
-        {"name": "sensor-env-ahmedabad", "type": "environment", "expectedFrequency": 15},
-        {"name": "sensor-env-gandhinagar", "type": "environment", "expectedFrequency": 15},
-        {"name": "sensor-traffic-ahmedabad-A", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-ahmedabad-B", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-ahmedabad-C", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-gandhinagar-A", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-gandhinagar-B", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-traffic-gandhinagar-C", "type": "traffic", "expectedFrequency": 30},
-        {"name": "sensor-services-ahmedabad", "type": "services", "expectedFrequency": 30},
-        {"name": "sensor-services-gandhinagar", "type": "services", "expectedFrequency": 30},
+    sources_data = [
+        {"name": "sensor-env-ahmedabad", "type": "environment", "expected_frequency": 15},
+        {"name": "sensor-env-gandhinagar", "type": "environment", "expected_frequency": 15},
+        {"name": "sensor-traffic-ahmedabad-A", "type": "traffic", "expected_frequency": 30},
+        {"name": "sensor-traffic-ahmedabad-B", "type": "traffic", "expected_frequency": 30},
+        {"name": "sensor-traffic-ahmedabad-C", "type": "traffic", "expected_frequency": 30},
+        {"name": "sensor-traffic-gandhinagar-A", "type": "traffic", "expected_frequency": 30},
+        {"name": "sensor-traffic-gandhinagar-B", "type": "traffic", "expected_frequency": 30},
+        {"name": "sensor-traffic-gandhinagar-C", "type": "traffic", "expected_frequency": 30},
+        {"name": "sensor-services-ahmedabad", "type": "services", "expected_frequency": 30},
+        {"name": "sensor-services-gandhinagar", "type": "services", "expected_frequency": 30},
     ]
     
     logger.info("Seeding data sources...")
-    for source_data in sources:
-        source = await db.datasource.upsert(
-            where={"name": source_data["name"]},
-            data={
-                "create": source_data,
-                "update": source_data
-            }
+    for source_data in sources_data:
+        source, created = await DataSource.get_or_create(
+            name=source_data["name"],
+            defaults=source_data
         )
-        logger.info(f"✅ Source: {source.name}")
+        if created:
+            logger.info(f"✅ Source created: {source.name}")
+        else:
+            logger.info(f"ℹ️  Source exists: {source.name}")
 
 
 async def main():
     """Main seeding function"""
     try:
-        await db.connect()
+        await Tortoise.init(
+            db_url=settings.DATABASE_URL,
+            modules={"models": ["backend.app.models"]}
+        )
+        await Tortoise.generate_schemas()
         logger.info("🗄️  Connected to database")
         
         await seed_cities()
@@ -84,8 +96,10 @@ async def main():
         
     except Exception as e:
         logger.error(f"❌ Seeding failed: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
-        await db.disconnect()
+        await Tortoise.close_connections()
 
 
 if __name__ == "__main__":
