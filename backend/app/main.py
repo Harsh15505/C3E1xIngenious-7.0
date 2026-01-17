@@ -82,13 +82,13 @@ async def scheduler_status():
     }
 
 # Import and include routers
-from app.api.v1 import ingest, scenario, system
+from app.api.v1 import ingest, scenario, system, analytics
 app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["ingestion"])
 app.include_router(scenario.router, prefix="/api/v1/scenario", tags=["scenario"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
+app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
 # Will add more routers in upcoming phases:
-# from app.api.v1 import metrics, analytics, alerts, citizen
+# from app.api.v1 import metrics, alerts, citizen
 # app.include_router(metrics.router, prefix="/api/v1/metrics", tags=["metrics"])
-# app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
 # app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["alerts"])
 # app.include_router(citizen.router, prefix="/api/v1/citizen", tags=["citizen"])
