@@ -20,18 +20,13 @@ scheduler = AsyncIOScheduler()
 
 async def fetch_environment_data():
     """Fetch environmental data from external sources (every 15 min)"""
-    logger.info(f"[CRON] Fetching environment data at {datetime.utcnow()}")
-    
-    # TODO: Implement actual data fetching
-    # - Call external weather APIs
-    # - Call AQI sensor networks
-    # - Validate and ingest through CDO layer
+    logger.info(f"[CRON] Fetching real-time environment data at {datetime.utcnow()}")
     
     try:
-        # Placeholder for actual implementation
-        pass
+        from app.real_time_fetchers import fetch_realtime_data
+        await fetch_realtime_data()
     except Exception as e:
-        logger.error(f"Environment data fetch failed: {e}")
+        logger.error(f"Real-time data fetch failed: {e}")
 
 
 async def fetch_traffic_data():

@@ -8,26 +8,24 @@ from datetime import datetime, timedelta
 import random
 import math
 from tortoise import Tortoise
-from app.models import EnvironmentData, TrafficData, PublicServiceData, City
+from app.models import EnvironmentData, TrafficData, ServiceData, City
 from app.config import get_settings
 import ssl
 
 settings = get_settings()
 
-# City coordinates for realistic data
+# Gujarat cities for state-specific prototype
 CITIES = {
-    'Ahmedabad': {'lat': 23.0225, 'lon': 72.5714, 'timezone': 'Asia/Kolkata'},
-    'Mumbai': {'lat': 19.0760, 'lon': 72.8777, 'timezone': 'Asia/Kolkata'},
-    'Delhi': {'lat': 28.7041, 'lon': 77.1025, 'timezone': 'Asia/Kolkata'},
-    'Bangalore': {'lat': 12.9716, 'lon': 77.5946, 'timezone': 'Asia/Kolkata'},
+    'Ahmedabad': {'lat': 23.0225, 'lon': 72.5714, 'timezone': 'Asia/Kolkata', 'state': 'Gujarat', 'country': 'India', 'population': 8450000},
+    'Gandhinagar': {'lat': 23.2156, 'lon': 72.6369, 'timezone': 'Asia/Kolkata', 'state': 'Gujarat', 'country': 'India', 'population': 292000},
+    'Vadodara': {'lat': 22.3072, 'lon': 73.1812, 'timezone': 'Asia/Kolkata', 'state': 'Gujarat', 'country': 'India', 'population': 2065000},
 }
 
-# Realistic ranges for Indian cities
+# Realistic ranges for Gujarat cities
 TEMP_RANGES = {
-    'Ahmedabad': {'min': 18, 'max': 42, 'summer': 38, 'winter': 22},
-    'Mumbai': {'min': 20, 'max': 35, 'summer': 32, 'winter': 24},
-    'Delhi': {'min': 8, 'max': 45, 'summer': 40, 'winter': 15},
-    'Bangalore': {'min': 16, 'max': 35, 'summer': 32, 'winter': 20},
+    'Ahmedabad': {'min': 15, 'max': 45, 'summer': 40, 'winter': 22},
+    'Gandhinagar': {'min': 14, 'max': 44, 'summer': 39, 'winter': 21},
+    'Vadodara': {'min': 16, 'max': 43, 'summer': 38, 'winter': 23},
 }
 
 AQI_RANGES = {
@@ -54,12 +52,11 @@ def generate_realistic_temperature(city_name: str, timestamp: datetime, hour: in
 
 def generate_realistic_aqi(city_name: str, timestamp: datetime, hour: int) -> int:
     """Generate realistic AQI with patterns"""
-    # Base AQI varies by city (Ahmedabad and Delhi have higher pollution)
+    # Base AQI for Gujarat cities (generally moderate to high pollution)
     base_aqi = {
-        'Ahmedabad': 120,
-        'Mumbai': 90,
-        'Delhi': 180,
-        'Bangalore': 70,
+        'Ahmedabad': 140,  # Industrial city, higher pollution
+        'Gandhinagar': 95,  # Capital city, better air quality
+        'Vadodara': 125,    # Industrial hub
     }[city_name]
     
     # Rush hour increases (7-10am, 6-9pm)
@@ -128,17 +125,33 @@ async def populate_historical_data():
     print("🚀 Starting historical data population...")
     print("=" * 60)
     
-    # Initialize Tortoise
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
+    # Initialize Tortoise using same config as main app
+    from pathlib import Path
+    ca_cert_path = Path(__file__).parent.parent / 'ca-certificate.crt'
+    ssl_context = ssl.create_default_context(cafile=str(ca_cert_path))
     
     await Tortoise.init(
-        db_url=settings.DATABASE_URL,
-        modules={'models': ['app.models']},
-        use_tz=True,
-        timezone='UTC',
-        _create_db=False,
+        config={
+            'connections': {
+                'default': {
+                    'engine': 'tortoise.backends.asyncpg',
+                    'credentials': {
+                        'host': settings.DB_HOST,
+                        'port': settings.DB_PORT,
+                        'user': settings.DB_USER,
+                        'password': settings.DB_PASSWORD,
+                        'database': settings.DB_NAME,
+                        'ssl': ssl_context
+                    }
+                }
+            },
+            'apps': {
+                'models': {
+                    'models': ['app.models'],
+                    'default_connection': 'default',
+                }
+            }
+        }
     )
     
     # Get or create cities
@@ -147,17 +160,25 @@ async def populate_historical_data():
         city, _ = await City.get_or_create(
             name=city_name,
             defaults={
+                'state': coords['state'],
+                'country': coords['country'],
+                'latitude': coords['lat'],
+                'population': coords['population'],
                 'latitude': coords['lat'],
                 'longitude': coords['lon'],
                 'timezone': coords['timezone'],
-                'metadata': {'population': 5000000 if city_name == 'Ahmedabad' else 10000000}
+                'metadata': {
+                    'population': coords['population'],
+                    'region': 'Gujarat',
+                    'prototype_city': True
+                }
             }
         )
         cities_map[city_name] = city
-        print(f"✅ City: {city_name}")
+        print(f"✅ City: {city_name} ({coords['state']})")
     
     # Generate data for last 60 days
-    end_date = datetime.utcnow()
+    end_date = datetime.now()
     start_date = end_date - timedelta(days=60)
     
     print(f"\n📅 Generating data from {start_date.date()} to {end_date.date()}")
@@ -200,6 +221,7 @@ async def populate_historical_data():
                     city=city,
                     timestamp=current_date,
                     zone=zone,
+                    density_percent=round(congestion * 100, 1),  # Convert to percentage
                     congestion_level=congestion,
                     avg_speed=round(random.uniform(15, 50) * (1 - congestion), 1),
                     incident_count=random.choices([0, 1, 2, 3], weights=[0.7, 0.2, 0.08, 0.02])[0],
@@ -208,7 +230,7 @@ async def populate_historical_data():
             
             # Public Service Data (daily, not hourly)
             if hour == 12:  # Once per day at noon
-                await PublicServiceData.create(
+                await ServiceData.create(
                     city=city,
                     timestamp=current_date,
                     service_type='water',
@@ -218,7 +240,7 @@ async def populate_historical_data():
                     source='historical_synthetic'
                 )
                 
-                await PublicServiceData.create(
+                await ServiceData.create(
                     city=city,
                     timestamp=current_date,
                     service_type='power',
@@ -228,7 +250,7 @@ async def populate_historical_data():
                     source='historical_synthetic'
                 )
                 
-                await PublicServiceData.create(
+                await ServiceData.create(
                     city=city,
                     timestamp=current_date,
                     service_type='waste',
@@ -245,13 +267,18 @@ async def populate_historical_data():
         # Progress indicator
         if current_date.hour == 0:
             days_done = (current_date - start_date).days
-            print(f"📊 Progress: Day {days_done}/60 - {city_name}")
+            print(f"📊 Progress: Day {days_done}/60")
     
     print("\n" + "=" * 60)
     print(f"✅ Historical data population complete!")
     print(f"📈 Total records created: ~{total_records:,}")
-    print(f"🏙️  Cities: {len(cities_map)}")
+    print(f"🏙️  Gujarat Cities: {len(cities_map)}")
+    print(f"   - Ahmedabad (8.45M population)")
+    print(f"   - Gandhinagar (292K population, State Capital)")
+    print(f"   - Vadodara (2.07M population)")
     print(f"📅 Date range: {start_date.date()} to {end_date.date()}")
+    print(f"🌡️  Data types: Environment, Traffic, Services")
+    print("=" * 60)
     print("=" * 60)
     
     await Tortoise.close_connections()
