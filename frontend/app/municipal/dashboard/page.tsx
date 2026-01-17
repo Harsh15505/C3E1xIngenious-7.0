@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
 import { api, getSeverityColor, formatTimestamp } from '@/lib/api';
@@ -17,9 +17,60 @@ export default function MunicipalDashboard() {
   const [environmentData, setEnvironmentData] = useState<any[]>([]);
   const [trafficData, setTrafficData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const seenAlertIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     loadDashboardData();
+  }, [selectedCity]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => undefined);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001';
+    const wsBaseUrl = apiBaseUrl.replace(/^http/, 'ws');
+    const ws = new WebSocket(`${wsBaseUrl}/ws/city/${selectedCity.toLowerCase()}`);
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'update') {
+          if (payload.alerts) setAlerts(payload.alerts);
+          if (payload.risk) setRiskScore(payload.risk);
+          if (payload.anomalies) setAnomalies(payload.anomalies);
+
+          if (payload.alerts?.alerts && typeof window !== 'undefined' && 'Notification' in window) {
+            const currentIds = new Set<string>(payload.alerts.alerts.map((a: any) => String(a.id)));
+            const newAlerts = payload.alerts.alerts.filter((a: any) => !seenAlertIdsRef.current.has(a.id));
+
+            if (Notification.permission === 'granted') {
+              newAlerts.slice(0, 3).forEach((alert: any) => {
+                new Notification(alert.title, {
+                  body: alert.message,
+                });
+              });
+            }
+
+            seenAlertIdsRef.current = currentIds;
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return () => {
+      ws.close();
+    };
   }, [selectedCity]);
 
   const loadDashboardData = async () => {

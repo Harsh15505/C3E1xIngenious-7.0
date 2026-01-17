@@ -3,10 +3,11 @@ FastAPI Application Entry Point
 Urban Intelligence Platform
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import asyncio
 from tortoise import Tortoise
 
 # Import scheduler
@@ -96,6 +97,67 @@ async def scheduler_status():
         "scheduler": "running",
         "jobs": get_job_status()
     }
+
+
+@app.websocket("/ws/city/{city}")
+async def city_websocket(websocket: WebSocket, city: str):
+    await websocket.accept()
+
+    try:
+        while True:
+            from app.models import City, Alert
+            from app.modules.ml.core import calculate_risk_score, detect_anomalies
+
+            city_obj = await City.filter(name__iexact=city).first()
+            if not city_obj:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"City '{city}' not found"
+                })
+                await asyncio.sleep(10)
+                continue
+
+            # Alerts payload (active only)
+            alerts = await Alert.filter(city=city_obj, is_active=True).order_by("-created_at").limit(10)
+            total_alerts = await Alert.filter(city=city_obj).count()
+            active_alerts = await Alert.filter(city=city_obj, is_active=True).count()
+
+            alert_payload = {
+                "city": city,
+                "total_alerts": total_alerts,
+                "active_alerts": active_alerts,
+                "alerts": [
+                    {
+                        "id": str(a.id),
+                        "type": a.type,
+                        "severity": a.severity,
+                        "audience": a.audience,
+                        "title": a.title,
+                        "message": a.message,
+                        "is_active": a.is_active,
+                        "metadata": a.metadata,
+                        "created_at": a.created_at.isoformat()
+                    }
+                    for a in alerts
+                ]
+            }
+
+            risk = await calculate_risk_score(city)
+            anomalies = await detect_anomalies(city, hours=24)
+
+            await websocket.send_json({
+                "type": "update",
+                "city": city,
+                "alerts": alert_payload,
+                "risk": risk,
+                "anomalies": anomalies
+            })
+
+            await asyncio.sleep(10)
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected for city: {city}")
+    except Exception as e:
+        logger.error(f"WebSocket error for city {city}: {e}")
 
 # Import and include routers
 from app.api.v1 import ingest, scenario, system, analytics, alerts, auth
