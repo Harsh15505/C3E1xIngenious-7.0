@@ -7,6 +7,8 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.modules.analytics.anomaly import AnomalyDetector
 from app.modules.analytics.risk import RiskScorer
+from app.modules.ml.core import forecast_metrics, calculate_risk_score, detect_anomalies
+from app.modules.ml.explainer import explain_prediction, generate_city_summary
 from app.models import City
 
 router = APIRouter()
@@ -210,3 +212,109 @@ async def get_traffic_data(
         "city": city,
         "zones": list(zones_data.values())
     }
+
+
+@router.get("/forecast/{city}")
+async def get_forecast(
+    city: str,
+    days: int = Query(7, ge=1, le=14, description="Number of days to forecast (1-14)")
+):
+    """
+    Get ML-based forecast for environmental metrics
+    Returns predictions with confidence scores and explanations
+    """
+    try:
+        city_obj = await City.filter(name__iexact=city).first()
+        if not city_obj:
+            raise HTTPException(status_code=404, detail=f"City {city} not found")
+        
+        # Get forecast predictions
+        forecast_result = await forecast_metrics(city, days)
+        
+        # Generate explanation
+        explanation = await explain_prediction(forecast_result, 'forecast')
+        
+        return {
+            "city": city,
+            "forecast": forecast_result,
+            "explanation": explanation
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Forecast failed: {str(e)}")
+
+
+@router.get("/ml-risk/{city}")
+async def get_ml_risk_score(city: str):
+    """
+    Get ML-based risk score with explainability
+    Returns comprehensive risk assessment with confidence and breakdown
+    """
+    try:
+        city_obj = await City.filter(name__iexact=city).first()
+        if not city_obj:
+            raise HTTPException(status_code=404, detail=f"City {city} not found")
+        
+        # Calculate risk score
+        risk_result = await calculate_risk_score(city)
+        
+        # Generate explanation
+        explanation = await explain_prediction(risk_result, 'risk')
+        
+        return {
+            "city": city,
+            "risk_assessment": risk_result,
+            "explanation": explanation
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Risk calculation failed: {str(e)}")
+
+
+@router.get("/ml-anomalies/{city}")
+async def get_ml_anomalies(
+    city: str,
+    hours: int = Query(24, ge=1, le=168, description="Hours of history to analyze (1-168)")
+):
+    """
+    Detect anomalies using ML with explanations
+    Returns anomalies with z-scores and confidence
+    """
+    try:
+        city_obj = await City.filter(name__iexact=city).first()
+        if not city_obj:
+            raise HTTPException(status_code=404, detail=f"City {city} not found")
+        
+        # Detect anomalies
+        anomaly_result = await detect_anomalies(city, hours)
+        
+        # Generate explanation
+        explanation = await explain_prediction(anomaly_result, 'anomaly')
+        
+        return {
+            "city": city,
+            "anomaly_detection": anomaly_result,
+            "explanation": explanation
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Anomaly detection failed: {str(e)}")
+
+
+@router.get("/city-summary/{city}")
+async def get_city_summary(city: str):
+    """
+    Get comprehensive city insights with explainability
+    Returns high-level summary with trends and alerts
+    """
+    try:
+        city_obj = await City.filter(name__iexact=city).first()
+        if not city_obj:
+            raise HTTPException(status_code=404, detail=f"City {city} not found")
+        
+        # Generate city summary
+        summary = await generate_city_summary(city)
+        
+        return {
+            "city": city,
+            "summary": summary
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Summary generation failed: {str(e)}")
