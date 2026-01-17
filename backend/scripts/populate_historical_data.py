@@ -177,9 +177,32 @@ async def populate_historical_data():
         cities_map[city_name] = city
         print(f"✅ City: {city_name} ({coords['state']})")
     
-    # Generate data for last 60 days
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=60)
+    # Check what data already exists
+    existing_data = await EnvironmentData.all().order_by('-timestamp').limit(1)
+    
+    if existing_data:
+        latest_timestamp = existing_data[0].timestamp
+        start_date = latest_timestamp + timedelta(hours=1)  # Continue from next hour
+        
+        # Get the earliest data to calculate original start
+        earliest_data = await EnvironmentData.all().order_by('timestamp').limit(1)
+        original_start = earliest_data[0].timestamp
+        end_date = original_start + timedelta(days=15)  # 15 days from original start
+        
+        # Make timezone-aware if needed
+        if latest_timestamp.tzinfo is not None:
+            from datetime import timezone
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(tzinfo=timezone.utc)
+        
+        print(f"\n📋 Found existing data from: {original_start}")
+        print(f"📋 Latest data: {latest_timestamp}")
+        print(f"📋 Continuing from: {start_date}")
+        print(f"📋 Target end date: {end_date}")
+    else:
+        # Generate data for last 15 days
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=15)
     
     print(f"\n📅 Generating data from {start_date.date()} to {end_date.date()}")
     print("=" * 60)
@@ -262,12 +285,17 @@ async def populate_historical_data():
             
             total_records += 7  # 1 env + 5 traffic + (3 services if noon)
         
+        # Small delay every 24 hours to prevent connection pool exhaustion
+        if current_date.hour == 23:
+            await asyncio.sleep(0.5)
+        
         current_date += timedelta(hours=1)
         
         # Progress indicator
         if current_date.hour == 0:
             days_done = (current_date - start_date).days
-            print(f"📊 Progress: Day {days_done}/60")
+            total_days = (end_date - start_date).days
+            print(f"📊 Progress: Day {days_done}/{total_days}")
     
     print("\n" + "=" * 60)
     print(f"✅ Historical data population complete!")
