@@ -19,6 +19,7 @@ class DataIngestionBase(BaseModel):
     city: str
     timestamp: datetime
     source: str
+    source: str
 
 
 class HealthResponse(BaseModel):

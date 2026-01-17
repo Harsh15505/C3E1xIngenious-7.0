@@ -13,9 +13,10 @@ class DataStandardizer:
     @staticmethod
     def standardize_environment_data(data: Dict[str, Any]) -> Dict[str, Any]:
         """Standardize environment data to common format"""
+        source_value = data.get("source") or data.get("source_id") or data.get("sourceId") or "unknown-source"
         standardized = {
             "city": data.get("city", "").strip().lower(),
-            "source": data.get("source", "").strip(),
+            "source": str(source_value).strip(),
             "timestamp": DataStandardizer._parse_timestamp(data.get("timestamp")),
             "aqi": float(data["aqi"]) if data.get("aqi") is not None else None,
             "pm25": float(data["pm25"]) if data.get("pm25") is not None else None,
@@ -27,9 +28,10 @@ class DataStandardizer:
     @staticmethod
     def standardize_service_data(data: Dict[str, Any]) -> Dict[str, Any]:
         """Standardize service data to common format"""
+        source_value = data.get("source") or data.get("source_id") or data.get("sourceId") or "unknown-source"
         standardized = {
             "city": data.get("city", "").strip().lower(),
-            "source": data.get("source", "").strip(),
+            "source": str(source_value).strip(),
             "timestamp": DataStandardizer._parse_timestamp(data.get("timestamp")),
             "water_supply_stress": float(data["waterSupplyStress"]) if data.get("waterSupplyStress") is not None else None,
             "waste_collection_eff": float(data["wasteCollectionEff"]) if data.get("wasteCollectionEff") is not None else None,
@@ -40,10 +42,11 @@ class DataStandardizer:
     @staticmethod
     def standardize_traffic_data(data: Dict[str, Any]) -> Dict[str, Any]:
         """Standardize traffic data to common format"""
+        source_value = data.get("source") or data.get("source_id") or data.get("sourceId") or "unknown-source"
         standardized = {
             "city": data.get("city", "").strip().lower(),
             "zone": data.get("zone", "").strip().upper(),
-            "source": data.get("source", "").strip(),
+            "source": str(source_value).strip(),
             "timestamp": DataStandardizer._parse_timestamp(data.get("timestamp")),
             "density_percent": float(data["densityPercent"]),
             "congestion_level": data.get("congestionLevel", "").strip().lower(),

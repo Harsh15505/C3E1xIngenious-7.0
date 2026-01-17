@@ -98,8 +98,9 @@ class RiskScorer:
         # Store in database
         await RiskScore.create(
             city=city,
-            overall_score=overall_score,
-            category=risk_level,
+            category="overall",
+            score=overall_score,
+            level=risk_level,
             contributing_factors=[
                 {"component": "environment", "score": env_risk["score"], "weight": RiskScorer.WEIGHTS["environment"]},
                 {"component": "traffic", "score": traffic_risk["score"], "weight": RiskScorer.WEIGHTS["traffic"]},
@@ -213,25 +214,25 @@ class RiskScorer:
         scores = []
         
         # Water stress risk
-        if latest.water_stress is not None:
-            water_score = RiskScorer._normalize_metric("water_stress", latest.water_stress)
+        if latest.water_supply_stress is not None:
+            water_score = RiskScorer._normalize_metric("water_stress", latest.water_supply_stress)
             scores.append(water_score)
             factors.append({
                 "metric": "Water Stress",
-                "value": latest.water_stress,
+                "value": latest.water_supply_stress,
                 "risk_contribution": round(water_score, 2),
-                "status": "critical" if latest.water_stress > 0.7 else "stressed" if latest.water_stress > 0.4 else "adequate"
+                "status": "critical" if latest.water_supply_stress > 0.7 else "stressed" if latest.water_supply_stress > 0.4 else "adequate"
             })
         
         # Power load risk
-        if latest.power_load_percent is not None:
-            power_score = RiskScorer._normalize_metric("power_load", latest.power_load_percent)
+        if latest.power_outage_count is not None:
+            power_score = RiskScorer._normalize_metric("power_load", latest.power_outage_count)
             scores.append(power_score)
             factors.append({
-                "metric": "Power Load",
-                "value": latest.power_load_percent,
+                "metric": "Power Outage Count",
+                "value": latest.power_outage_count,
                 "risk_contribution": round(power_score, 2),
-                "status": "overloaded" if latest.power_load_percent > 85 else "stressed" if latest.power_load_percent > 70 else "normal"
+                "status": "overloaded" if latest.power_outage_count > 10 else "stressed" if latest.power_outage_count > 5 else "normal"
             })
         
         avg_score = sum(scores) / len(scores) if scores else 0.5

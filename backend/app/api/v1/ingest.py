@@ -36,7 +36,7 @@ async def ingest_environment_data(data: EnvironmentDataInput):
     standardized = DataStandardizer.standardize_environment_data(data_dict)
     
     # Find city
-    city = await City.filter(name=standardized["city"]).first()
+    city = await City.filter(name__iexact=standardized["city"]).first()
     if not city:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -47,6 +47,7 @@ async def ingest_environment_data(data: EnvironmentDataInput):
         # Create environment data record
         env_data = await EnvironmentData.create(
             city=city,
+            source=standardized["source"],
             aqi=standardized.get("aqi"),
             pm25=standardized.get("pm25"),
             temperature=standardized.get("temperature"),
@@ -94,7 +95,7 @@ async def ingest_service_data(data: ServiceDataInput):
     standardized = DataStandardizer.standardize_service_data(data_dict)
     
     # Find city
-    city = await City.filter(name=standardized["city"]).first()
+    city = await City.filter(name__iexact=standardized["city"]).first()
     if not city:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -105,6 +106,7 @@ async def ingest_service_data(data: ServiceDataInput):
         # Create service data record
         service_data = await ServiceData.create(
             city=city,
+            source=standardized["source"],
             water_supply_stress=standardized.get("water_supply_stress"),
             waste_collection_eff=standardized.get("waste_collection_eff"),
             power_outage_count=standardized.get("power_outage_count"),
@@ -151,7 +153,7 @@ async def ingest_traffic_data(data: TrafficDataInput):
     standardized = DataStandardizer.standardize_traffic_data(data_dict)
     
     # Find city
-    city = await City.filter(name=standardized["city"]).first()
+    city = await City.filter(name__iexact=standardized["city"]).first()
     if not city:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -162,6 +164,7 @@ async def ingest_traffic_data(data: TrafficDataInput):
         # Create traffic data record
         traffic_data = await TrafficData.create(
             city=city,
+            source=standardized["source"],
             zone=standardized["zone"],
             density_percent=standardized["density_percent"],
             congestion_level=standardized["congestion_level"],

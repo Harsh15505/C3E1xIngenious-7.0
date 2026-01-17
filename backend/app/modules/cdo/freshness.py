@@ -31,17 +31,17 @@ class FreshnessTracker:
     @staticmethod
     async def update_source_status(source_id: str, success: bool = True):
         """Update data source last seen and status"""
-        source = await DataSource.filter(source_id=source_id).first()
+        source = await DataSource.filter(name=source_id).first()
         
         if not source:
             # Create new data source if it doesn't exist
             source = await DataSource.create(
-                source_id=source_id,
                 name=source_id,
-                source_type="sensor",
+                type="sensor",
                 expected_frequency=15,  # Default 15 minutes
                 is_online=success,
                 failure_count=0 if success else 1,
+                total_ingestions=1 if success else 0,
                 last_seen_at=datetime.utcnow()
             )
         else:
@@ -51,6 +51,7 @@ class FreshnessTracker:
             if success:
                 source.is_online = True
                 source.failure_count = 0
+                source.total_ingestions += 1
             else:
                 source.failure_count += 1
                 # Mark offline if 3+ consecutive failures
@@ -70,7 +71,7 @@ class FreshnessTracker:
         for source in sources:
             if not source.last_seen_at:
                 stale_sources.append({
-                    "source_id": source.source_id,
+                    "source": source.name,
                     "name": source.name,
                     "status": "never_reported",
                     "expected_frequency": source.expected_frequency
@@ -82,7 +83,7 @@ class FreshnessTracker:
                 # Consider stale if > 2x expected frequency
                 if time_since_last > (expected * 2):
                     stale_sources.append({
-                        "source_id": source.source_id,
+                        "source": source.name,
                         "name": source.name,
                         "status": "stale",
                         "minutes_since_last": round(time_since_last, 2),
@@ -95,7 +96,7 @@ class FreshnessTracker:
     @staticmethod
     async def check_data_freshness(source_id: str) -> Dict[str, Any]:
         """Check if data from source is fresh"""
-        source = await DataSource.filter(source_id=source_id).first()
+        source = await DataSource.filter(name=source_id).first()
         
         if not source or not source.last_seen_at:
             return {

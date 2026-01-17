@@ -130,7 +130,8 @@ async def get_risk_history(
         "count": len(risk_scores),
         "history": [
             {
-                "overall_score": r.overall_score,
+                "score": r.score,
+                "level": r.level,
                 "category": r.category,
                 "contributing_factors": r.contributing_factors,
                 "calculated_at": r.calculated_at.isoformat()
