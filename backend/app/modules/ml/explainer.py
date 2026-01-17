@@ -5,7 +5,7 @@ NO BLACK-BOX AI - Every prediction must be explained
 """
 
 from typing import Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import numpy as np
 
 
@@ -302,23 +302,35 @@ async def generate_city_summary(city: str) -> Dict[str, Any]:
             'confidence': float
         }
     """
-    from app.models.models import EnvironmentData, TrafficData, Alert
+    from app.models import EnvironmentData, TrafficData, Alert, City
+    
+    # Get city object
+    city_obj = await City.filter(name__iexact=city).first()
+    if not city_obj:
+        return {
+            'summary': f'City {city} not found',
+            'key_insights': [],
+            'trends': {},
+            'alerts': [],
+            'confidence': 0.0,
+            'explanation': f'City {city} not found in database'
+        }
     
     # Fetch recent data (last 24 hours)
-    cutoff = datetime.utcnow() - timedelta(hours=24)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     
     env_data = await EnvironmentData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=cutoff
     ).order_by('-timestamp')
     
     traffic_data = await TrafficData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=cutoff
     ).order_by('-timestamp')
     
     alerts = await Alert.filter(
-        city=city.lower(),
+        city=city_obj,
         created_at__gte=cutoff
     ).order_by('-severity')
     
@@ -329,36 +341,42 @@ async def generate_city_summary(city: str) -> Dict[str, Any]:
     # Environmental insights
     if env_data:
         latest_env = env_data[0]
-        avg_aqi = np.mean([d.aqi for d in env_data[:24]])  # Last 24 hours
+        # Filter out None values for average
+        valid_aqis = [d.aqi for d in env_data[:24] if d.aqi is not None]
+        avg_aqi = np.mean(valid_aqis) if valid_aqis else 0
         
-        if latest_env.aqi > 150:
-            key_insights.append(f"⚠️ Air quality is unhealthy (AQI: {latest_env.aqi})")
-        elif latest_env.aqi > 100:
-            key_insights.append(f"⚠️ Air quality is moderate (AQI: {latest_env.aqi})")
-        else:
-            key_insights.append(f"✓ Air quality is good (AQI: {latest_env.aqi})")
+        if latest_env.aqi and latest_env.aqi > 150:
+            key_insights.append(f"WARNING: Air quality is unhealthy (AQI: {latest_env.aqi})")
+        elif latest_env.aqi and latest_env.aqi > 100:
+            key_insights.append(f"WARNING: Air quality is moderate (AQI: {latest_env.aqi})")
+        elif latest_env.aqi:
+            key_insights.append(f"OK: Air quality is good (AQI: {latest_env.aqi})")
         
-        trends['aqi'] = {
-            'current': round(latest_env.aqi, 1),
-            '24h_average': round(avg_aqi, 1),
-            'trend': 'increasing' if latest_env.aqi > avg_aqi else 'decreasing'
-        }
+        if latest_env.aqi:
+            trends['aqi'] = {
+                'current': round(latest_env.aqi, 1),
+                '24h_average': round(avg_aqi, 1),
+                'trend': 'increasing' if latest_env.aqi > avg_aqi else 'decreasing'
+            }
         
-        trends['temperature'] = {
-            'current': round(latest_env.temperature, 1),
-            'status': 'normal' if 15 <= latest_env.temperature <= 35 else 'extreme'
-        }
+        if latest_env.temperature:
+            trends['temperature'] = {
+                'current': round(latest_env.temperature, 1),
+                'status': 'normal' if 15 <= latest_env.temperature <= 35 else 'extreme'
+            }
     
     # Traffic insights
     if traffic_data:
-        avg_congestion = np.mean([t.congestion_level for t in traffic_data[:10]])
+        congestion_map = {'low': 30, 'medium': 60, 'high': 90}
+        congestions = [congestion_map.get(t.congestion_level, 50) for t in traffic_data[:10]]
+        avg_congestion = np.mean(congestions)
         
         if avg_congestion > 70:
-            key_insights.append(f"⚠️ Heavy traffic congestion ({avg_congestion:.0f}%)")
+            key_insights.append(f"WARNING: Heavy traffic congestion ({avg_congestion:.0f}%)")
         elif avg_congestion > 50:
             key_insights.append(f"Traffic is moderate ({avg_congestion:.0f}%)")
         else:
-            key_insights.append(f"✓ Traffic is flowing smoothly ({avg_congestion:.0f}%)")
+            key_insights.append(f"OK: Traffic is flowing smoothly ({avg_congestion:.0f}%)")
         
         trends['traffic'] = {
             'average_congestion': round(avg_congestion, 1),
@@ -369,7 +387,7 @@ async def generate_city_summary(city: str) -> Dict[str, Any]:
     if alerts:
         high_alerts = len([a for a in alerts if a.severity == 'high'])
         if high_alerts > 0:
-            alert_summaries.append(f"⚠️ {high_alerts} high-severity alerts active")
+            alert_summaries.append(f"WARNING: {high_alerts} high-severity alerts active")
             key_insights.append(f"Urgent: {high_alerts} critical alerts require attention")
     
     summary = (

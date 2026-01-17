@@ -4,7 +4,7 @@ All functions return predictions with confidence scores and explanations
 """
 
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any
 from scipy import stats
 from sklearn.linear_model import LinearRegression
@@ -26,14 +26,24 @@ async def forecast_metrics(city: str, days: int = 7) -> Dict[str, Any]:
             'method': str
         }
     """
-    from app.models.models import EnvironmentData, TrafficData
+    from app.models import EnvironmentData, TrafficData, City
+    
+    # Get city object
+    city_obj = await City.filter(name__iexact=city).first()
+    if not city_obj:
+        return {
+            'predictions': [],
+            'confidence_score': 0.0,
+            'explanation': f'City {city} not found in database.',
+            'method': 'moving_average_regression'
+        }
     
     # Fetch historical data (last 15 days)
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=15)
     
     env_data = await EnvironmentData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=start_date,
         timestamp__lte=end_date
     ).order_by('timestamp')
@@ -46,13 +56,32 @@ async def forecast_metrics(city: str, days: int = 7) -> Dict[str, Any]:
             'method': 'moving_average_regression'
         }
     
-    # Extract time series data
-    timestamps = [(d.timestamp - start_date).total_seconds() / 3600 for d in env_data]  # Hours since start
-    temperatures = [d.temperature for d in env_data]
-    aqis = [d.aqi for d in env_data]
+    # Extract time series data (filter out None values)
+    data_points = []
+    for d in env_data:
+        if d.aqi is not None and d.temperature is not None:
+            data_points.append({
+                'timestamp': d.timestamp,
+                'temperature': d.temperature,
+                'aqi': d.aqi
+            })
+    
+    if len(data_points) < 7:
+        return {
+            'predictions': [],
+            'confidence_score': 0.0,
+            'explanation': f'Insufficient valid data for {city}. Need at least 7 data points with complete metrics.',
+            'method': 'moving_average_regression'
+        }
+    
+    timestamps = [(d['timestamp'] - start_date).total_seconds() / 3600 for d in data_points]  # Hours since start
+    temperatures = [d['temperature'] for d in data_points]
+    aqis = [d['aqi'] for d in data_points]
     
     # Calculate moving averages (3-day window)
     window = min(72, len(timestamps) // 3)  # 72 hours = 3 days
+    if window < 3:
+        window = 3
     temp_ma = np.convolve(temperatures, np.ones(window)/window, mode='valid')
     aqi_ma = np.convolve(aqis, np.ones(window)/window, mode='valid')
     
@@ -107,7 +136,7 @@ async def forecast_metrics(city: str, days: int = 7) -> Dict[str, Any]:
     aqi_trend = "increasing" if aqi_model.coef_[0] > 0 else "decreasing"
     
     explanation = (
-        f"Forecast based on {len(env_data)} hours of historical data for {city}. "
+        f"Forecast based on {len(data_points)} hours of valid data for {city}. "
         f"Temperature trend: {temp_trend} (R²={temp_r2:.2f}). "
         f"AQI trend: {aqi_trend} (R²={aqi_r2:.2f}). "
         f"Using moving average + linear regression. "
@@ -119,7 +148,7 @@ async def forecast_metrics(city: str, days: int = 7) -> Dict[str, Any]:
         'confidence_score': round(overall_confidence, 2),
         'explanation': explanation,
         'method': 'moving_average_regression',
-        'data_points': len(env_data)
+        'data_points': len(data_points)
     }
 
 
@@ -142,23 +171,34 @@ async def calculate_risk_score(city: str) -> Dict[str, Any]:
             }
         }
     """
-    from app.models.models import EnvironmentData, TrafficData, ServiceData
+    from app.models import EnvironmentData, TrafficData, ServiceData, City
+    
+    # Get city object
+    city_obj = await City.filter(name__iexact=city).first()
+    if not city_obj:
+        return {
+            'risk_score': 0.0,
+            'confidence_score': 0.0,
+            'explanation': f'City {city} not found in database.',
+            'breakdown': {'environment': 0.0, 'traffic': 0.0, 'services': 0.0},
+            'data_freshness': {}
+        }
     
     # Fetch latest data (within last 2 hours)
-    cutoff_time = datetime.utcnow() - timedelta(hours=2)
+    cutoff_time = datetime.now(timezone.utc) - timedelta(hours=2)
     
     env = await EnvironmentData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=cutoff_time
     ).order_by('-timestamp').first()
     
     traffic = await TrafficData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=cutoff_time
     ).order_by('-timestamp').limit(10)
     
     services = await ServiceData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=cutoff_time
     ).order_by('-timestamp').limit(10)
     
@@ -188,9 +228,11 @@ async def calculate_risk_score(city: str) -> Dict[str, Any]:
     
     if traffic:
         # Traffic risk based on congestion levels
-        congestion_levels = [t.congestion_level for t in traffic]
+        # Convert congestion_level string to numeric
+        congestion_map = {'low': 30, 'medium': 60, 'high': 90}
+        congestion_levels = [congestion_map.get(t.congestion_level, 50) for t in traffic]
         avg_congestion = np.mean(congestion_levels)
-        traffic_score = avg_congestion / 100  # Already 0-100 percentage
+        traffic_score = avg_congestion / 100  # Convert to 0-1 scale
         traffic_confidence = 0.85
         traffic_explanation = f"Avg congestion: {avg_congestion:.1f}% across {len(traffic)} zones"
     else:
@@ -263,18 +305,28 @@ async def detect_anomalies(city: str, hours: int = 24) -> Dict[str, Any]:
             'method': str
         }
     """
-    from app.models.models import EnvironmentData, TrafficData
+    from app.models import EnvironmentData, TrafficData, City
+    
+    # Get city object
+    city_obj = await City.filter(name__iexact=city).first()
+    if not city_obj:
+        return {
+            'anomalies': [],
+            'confidence_score': 0.0,
+            'explanation': f'City {city} not found in database.',
+            'method': 'z_score_iqr'
+        }
     
     # Fetch historical data
-    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+    cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
     
     env_data = await EnvironmentData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=cutoff_time
     ).order_by('timestamp')
     
     traffic_data = await TrafficData.filter(
-        city=city.lower(),
+        city=city_obj,
         timestamp__gte=cutoff_time
     ).order_by('timestamp')
     
@@ -288,9 +340,19 @@ async def detect_anomalies(city: str, hours: int = 24) -> Dict[str, Any]:
     
     anomalies = []
     
-    # Analyze environment metrics
-    temperatures = [d.temperature for d in env_data]
-    aqis = [d.aqi for d in env_data]
+    # Analyze environment metrics (filter out None values)
+    temperatures = [d.temperature for d in env_data if d.temperature is not None]
+    aqis = [d.aqi for d in env_data if d.aqi is not None]
+    
+    if len(temperatures) < 10 or len(aqis) < 10:
+        return {
+            'anomalies': [],
+            'confidence_score': 0.0,
+            'explanation': f'Insufficient valid data for anomaly detection. Need at least 10 complete data points.',
+            'method': 'z_score_iqr',
+            'baselines': {},
+            'thresholds': {}
+        }
     
     temp_mean = np.mean(temperatures)
     temp_std = np.std(temperatures)
@@ -301,30 +363,32 @@ async def detect_anomalies(city: str, hours: int = 24) -> Dict[str, Any]:
     z_threshold = 2.5
     
     for data in env_data:
-        temp_z = abs((data.temperature - temp_mean) / temp_std) if temp_std > 0 else 0
-        aqi_z = abs((data.aqi - aqi_mean) / aqi_std) if aqi_std > 0 else 0
+        if data.temperature is not None:
+            temp_z = abs((data.temperature - temp_mean) / temp_std) if temp_std > 0 else 0
+            if temp_z > z_threshold:
+                anomalies.append({
+                    'timestamp': data.timestamp.isoformat(),
+                    'metric': 'temperature',
+                    'value': data.temperature,
+                    'z_score': round(temp_z, 2),
+                    'severity': 'high' if temp_z > 3.0 else 'medium'
+                })
         
-        if temp_z > z_threshold:
-            anomalies.append({
-                'timestamp': data.timestamp.isoformat(),
-                'metric': 'temperature',
-                'value': data.temperature,
-                'z_score': round(temp_z, 2),
-                'severity': 'high' if temp_z > 3.0 else 'medium'
-            })
-        
-        if aqi_z > z_threshold:
-            anomalies.append({
-                'timestamp': data.timestamp.isoformat(),
-                'metric': 'aqi',
-                'value': data.aqi,
-                'z_score': round(aqi_z, 2),
-                'severity': 'high' if aqi_z > 3.0 else 'medium'
-            })
+        if data.aqi is not None:
+            aqi_z = abs((data.aqi - aqi_mean) / aqi_std) if aqi_std > 0 else 0
+            if aqi_z > z_threshold:
+                anomalies.append({
+                    'timestamp': data.timestamp.isoformat(),
+                    'metric': 'aqi',
+                    'value': data.aqi,
+                    'z_score': round(aqi_z, 2),
+                    'severity': 'high' if aqi_z > 3.0 else 'medium'
+                })
     
     # Analyze traffic metrics using IQR method
     if len(traffic_data) >= 10:
-        congestions = [t.congestion_level for t in traffic_data]
+        congestion_map = {'low': 30, 'medium': 60, 'high': 90}
+        congestions = [congestion_map.get(t.congestion_level, 50) for t in traffic_data]
         q1 = np.percentile(congestions, 25)
         q3 = np.percentile(congestions, 75)
         iqr = q3 - q1
@@ -332,11 +396,12 @@ async def detect_anomalies(city: str, hours: int = 24) -> Dict[str, Any]:
         upper_bound = q3 + (1.5 * iqr)
         
         for data in traffic_data:
-            if data.congestion_level < lower_bound or data.congestion_level > upper_bound:
+            congestion_value = congestion_map.get(data.congestion_level, 50)
+            if congestion_value < lower_bound or congestion_value > upper_bound:
                 anomalies.append({
                     'timestamp': data.timestamp.isoformat(),
                     'metric': 'traffic_congestion',
-                    'value': data.congestion_level,
+                    'value': congestion_value,
                     'iqr_bounds': [round(lower_bound, 1), round(upper_bound, 1)],
                     'severity': 'medium'
                 })

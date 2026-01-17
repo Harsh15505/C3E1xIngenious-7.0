@@ -79,6 +79,19 @@ export default function MunicipalDashboard() {
     }
   };
 
+  const alertDistributionData: { severity: string; count: number }[] = alerts?.alerts
+    ? Object.entries(
+        alerts.alerts.reduce((acc: Record<string, number>, alert: any) => {
+          const severity = alert.severity?.toLowerCase() || 'low';
+          acc[severity] = (acc[severity] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([severity, count]) => ({
+        severity,
+        count: Number(count)
+      }))
+    : [];
+
   if (loading) {
     return (
       <ProtectedRoute requireAdmin={true}>
@@ -102,8 +115,6 @@ export default function MunicipalDashboard() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">Municipal Dashboard</h2>
-            
-            {/* City Selector */}
               <div className="flex items-center space-x-4">
                 <label className="text-sm font-medium text-gray-700">City:</label>
                 <select
@@ -331,12 +342,16 @@ export default function MunicipalDashboard() {
               <h2 className="text-xl font-semibold text-gray-900">Alert Distribution</h2>
             </div>
             <div className="p-6">
-              {alerts && alerts.alerts && alerts.alerts.length > 0 ? (
-                <AlertDistribution alerts={alerts.alerts} />
+              {alertDistributionData.length > 0 ? (
+                <AlertDistribution data={alertDistributionData} />
               ) : (
                 <p className="text-gray-500 text-center py-8">No alerts to display</p>
               )}
             </div>
           </div>
         </div>
+      </div>
+      </div>
+    </ProtectedRoute>
+  );
 }
