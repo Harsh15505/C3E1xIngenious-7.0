@@ -11,7 +11,7 @@ from app.modules.scenario.explainer import ScenarioExplainer
 router = APIRouter()
 
 
-@router.post("/simulate", response_model=ScenarioResult)
+@router.post("/simulate")
 async def simulate_scenario(scenario: ScenarioInput):
     """
     Simulate a policy scenario and predict impacts
@@ -19,10 +19,8 @@ async def simulate_scenario(scenario: ScenarioInput):
     This is the CENTERPIECE feature - what-if analysis for policy decisions
     """
     try:
-        # Run simulation
-        result = ScenarioEngine.simulate(scenario.dict())
-        
-        # TODO: Save to database for audit trail
+        # Run simulation (now async)
+        result = await ScenarioEngine.simulate(scenario.dict())
         
         return result
     except Exception as e:
@@ -45,5 +43,27 @@ async def save_scenario(request: ScenarioSaveRequest):
 @router.get("/history/{city}")
 async def get_scenario_history(city: str, limit: int = 10):
     """Get history of scenarios simulated for a city"""
-    # TODO: Implement with Prisma
-    return {"scenarios": []}
+    from app.models import City, Scenario
+    
+    city_obj = await City.filter(name__iexact=city).first()
+    if not city_obj:
+        raise HTTPException(status_code=404, detail=f"City '{city}' not found")
+    
+    scenarios = await Scenario.filter(city=city_obj).order_by('-created_at').limit(limit)
+    
+    return {
+        "city": city,
+        "count": len(scenarios),
+        "scenarios": [
+            {
+                "id": str(s.id),
+                "name": s.name,
+                "inputs": s.inputs,
+                "outputs": s.outputs,
+                "confidence": s.confidence,
+                "explanation": s.explanation,
+                "created_at": s.created_at.isoformat()
+            }
+            for s in scenarios
+        ]
+    }

@@ -12,7 +12,7 @@ class ScenarioInput(BaseModel):
     timeWindow: str = Field(..., description="e.g., '08:00-11:00'")
     trafficDensityChange: float = Field(..., description="Percentage change, can be negative")
     heavyVehicleRestriction: bool = False
-    baselineAQI: float = Field(..., ge=0, le=500)
+    baselineAQI: Optional[float] = Field(None, ge=0, le=500, description="If not provided, fetched from database")
     baselineWaterStress: Optional[float] = Field(None, ge=0, le=1)
 
 
