@@ -2,10 +2,12 @@
 System Health and Trust API Router
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
 from app.modules.trust.health import SystemHealth
 from app.modules.trust.audit import AuditTrail
-from app.models import City, DataSource, Forecast
+from app.models import City, DataSource, Forecast, SystemAuditLog
+from app.modules.auth.middleware import get_current_admin
 
 router = APIRouter()
 
@@ -79,11 +81,73 @@ async def get_data_freshness():
     return await SystemHealth.get_data_freshness()
 
 
-@router.get("/audit/{city}")
-async def get_city_audit(city: str, days: int = 7):
-    """Get audit trail for a city"""
-    # TODO: Implement - get city_id from city name
-    return await AuditTrail.get_city_audit("city_id", days)
+@router.get("/audit")
+async def get_audit_logs(
+    user_email: Optional[str] = None,
+    role: Optional[str] = None,
+    status_code: Optional[int] = None,
+    method: Optional[str] = None,
+    path_prefix: Optional[str] = None,
+    city: Optional[str] = None,
+    since_hours: int = 168,  # default 7 days
+    limit: int = 100,
+    offset: int = 0,
+    admin=Depends(get_current_admin),
+):
+    """Admin-only: query audit logs with filters."""
+
+    # Clamp limits to avoid heavy responses
+    limit = min(max(limit, 1), 200)
+    offset = max(offset, 0)
+
+    query = SystemAuditLog.all()
+
+    if since_hours:
+        from datetime import datetime, timedelta
+
+        since_ts = datetime.utcnow() - timedelta(hours=since_hours)
+        query = query.filter(timestamp__gte=since_ts)
+
+    if user_email:
+        query = query.filter(user_email__icontains=user_email)
+    if role:
+        query = query.filter(user_role__iexact=role)
+    if status_code:
+        query = query.filter(status_code=status_code)
+    if method:
+        query = query.filter(method__iexact=method)
+    if path_prefix:
+        query = query.filter(path__startswith=path_prefix)
+    if city:
+        query = query.filter(city_id__iexact=city)
+
+    total = await query.count()
+    rows = await query.order_by("-timestamp").offset(offset).limit(limit)
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [
+            {
+                "id": str(r.id),
+                "timestamp": r.timestamp.isoformat(),
+                "method": r.method,
+                "path": r.path,
+                "status_code": r.status_code,
+                "latency_ms": r.latency_ms,
+                "client_ip": r.client_ip,
+                "user_email": r.user_email,
+                "user_role": r.user_role,
+                "category": r.category,
+                "action": r.action,
+                "city": r.city_id,
+                "success": r.success,
+                "error_message": r.error_message,
+            }
+            for r in rows
+        ],
+    }
 
 
 @router.get("/lineage/{metric}/{city}")

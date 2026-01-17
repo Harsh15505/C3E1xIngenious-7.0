@@ -11,6 +11,7 @@ import logging
 # Import scheduler
 from app.scheduler import start_scheduler, stop_scheduler, get_job_status
 from app.database import init_db, close_db
+from app.modules.trust.middleware import AuditLoggingMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -55,6 +56,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request audit logging
+app.add_middleware(AuditLoggingMiddleware)
 
 @app.get("/")
 async def root():

@@ -263,21 +263,32 @@ class CitizenRequest(Model):
 class SystemAuditLog(Model):
     id = fields.UUIDField(pk=True)
     
-    category = fields.CharField(max_length=50)  # ingestion, analytics, alert, scenario
-    action = fields.CharField(max_length=200)
-    
+    # Request context
+    method = fields.CharField(max_length=10)
+    path = fields.CharField(max_length=300)
+    status_code = fields.IntField()
+    latency_ms = fields.FloatField()
+    client_ip = fields.CharField(max_length=100, null=True)
+
+    # Actor context
+    user_id = fields.CharField(max_length=100, null=True)
+    user_email = fields.CharField(max_length=255, null=True)
+    user_role = fields.CharField(max_length=50, null=True)
+
+    # Domain context
+    category = fields.CharField(max_length=50, default="http_request")  # ingestion, analytics, alert, scenario, http_request
+    action = fields.CharField(max_length=200, null=True)
     city_id = fields.CharField(max_length=100, null=True)
-    
+
+    # Extra metadata
     details = fields.JSONField(null=True)
     success = fields.BooleanField()
-    
     error_message = fields.TextField(null=True)
-    
     timestamp = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "system_audit_logs"
-        indexes = ["category", "timestamp"]
+        indexes = ["timestamp", "status_code", "user_email", "path"]
 
 
 # ========================================

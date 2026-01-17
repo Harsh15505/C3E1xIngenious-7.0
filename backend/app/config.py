@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     FRESHNESS_THRESHOLD_CRITICAL: int = 60
     FRESHNESS_THRESHOLD_WARNING: int = 30
     
+    # External APIs
+    OPENWEATHER_API_KEY: str = ""
+    AQICN_API_KEY: str = ""  # Optional, some endpoints are free
+    
     # Forecasting
     FORECAST_DAYS: int = 7
     
