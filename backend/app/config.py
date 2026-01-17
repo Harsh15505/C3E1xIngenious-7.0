@@ -8,7 +8,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/urban_intelligence"
+    DATABASE_URL: str = "postgres://postgres:postgres@localhost:5432/urban_intelligence"
     
     # API
     API_V1_PREFIX: str = "/api/v1"
