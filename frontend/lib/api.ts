@@ -379,6 +379,16 @@ export const api = {
     if (!response.ok) throw new Error('Failed to fetch query logs');
     return response.json();
   },
+
+  async getAdminRecommendations(scenarioType: string, cityId: string) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/ai/admin/recommendations`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ scenario_type: scenarioType, city_id: cityId }),
+    });
+    if (!response.ok) throw new Error('Failed to fetch admin recommendations');
+    return response.json();
+  },
 };
 
 // ========================================

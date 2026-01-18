@@ -5,6 +5,33 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
 import { api } from '@/lib/api';
 
+interface AdminRecommendation {
+  severity: string;
+  action: string;
+  reason: string;
+  impact: string;
+}
+
+interface AdminRecommendationsResponse {
+  success?: boolean;
+  scenario_type: string;
+  city?: string;
+  city_name?: string;
+  recommendations: AdminRecommendation[];
+  data_sources?: string[];
+  analysis_period_hours?: number;
+  analysis_summary?: {
+    traffic_zones_analyzed?: number;
+    environment_records?: number;
+    active_alerts?: number;
+    risk_level?: string;
+  };
+  confidence?: number;
+  generated_at?: string;
+  response_time_ms?: number;
+  model?: string;
+}
+
 export default function ScenarioPage() {
   const [selectedCity, setSelectedCity] = useState('Ahmedabad');
   const [temperatureChange, setTemperatureChange] = useState(0);
@@ -20,6 +47,9 @@ export default function ScenarioPage() {
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [aiRecommendations, setAiRecommendations] = useState<AdminRecommendationsResponse | null>(null);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [recommendationError, setRecommendationError] = useState('');
 
   const cities = ['Ahmedabad', 'Gandhinagar', 'Vadodara'];
 
@@ -59,6 +89,42 @@ export default function ScenarioPage() {
     });
     setSimulationResult(null);
     setError('');
+  };
+
+  const fetchAIRecommendations = async (scenarioType: string) => {
+    setLoadingRecommendations(true);
+    setRecommendationError('');
+    setAiRecommendations(null);
+
+    try {
+      // Map city name to city ID
+      const cityIdMap: { [key: string]: string } = {
+        'Ahmedabad': 'e61c1dc6-3e80-4eef-ab0f-f625207ca41f',
+        'Gandhinagar': 'gandhinagar-city-id',
+        'Vadodara': 'vadodara-city-id',
+      };
+      const cityId = cityIdMap[selectedCity] || cityIdMap['Ahmedabad'];
+      
+      const result = await api.getAdminRecommendations(scenarioType, cityId);
+      setAiRecommendations(result);
+    } catch (err: any) {
+      setRecommendationError(err.message || 'Failed to fetch AI recommendations');
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  const getSeverityBadgeColor = (severity: string) => {
+    switch (severity.toUpperCase()) {
+      case 'HIGH':
+        return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800';
+      case 'LOW':
+        return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-800';
+    }
   };
 
   return (
@@ -338,6 +404,159 @@ export default function ScenarioPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* AI Recommendations Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI Recommendations</h2>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Get AI-powered recommendations based on current city conditions and historical patterns.
+            </p>
+
+            {/* Scenario Type Buttons */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <button
+                onClick={() => fetchAIRecommendations('traffic')}
+                disabled={loadingRecommendations}
+                className="flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Traffic
+              </button>
+              <button
+                onClick={() => fetchAIRecommendations('pollution')}
+                disabled={loadingRecommendations}
+                className="flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
+                Pollution
+              </button>
+              <button
+                onClick={() => fetchAIRecommendations('emergency')}
+                disabled={loadingRecommendations}
+                className="flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Emergency
+              </button>
+              <button
+                onClick={() => fetchAIRecommendations('general')}
+                disabled={loadingRecommendations}
+                className="flex items-center justify-center px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                General
+              </button>
+            </div>
+
+            {/* Loading State */}
+            {loadingRecommendations && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600 dark:border-gray-700 dark:border-t-purple-400"></div>
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Analyzing city data...</span>
+              </div>
+            )}
+
+            {/* Error State */}
+            {recommendationError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400 rounded-lg p-4">
+                <div className="flex">
+                  <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span>{recommendationError}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Recommendations Display */}
+            {aiRecommendations && !loadingRecommendations && (
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-purple-900 dark:text-purple-300 mb-2">
+                        {aiRecommendations.scenario_type.charAt(0).toUpperCase() + aiRecommendations.scenario_type.slice(1)} Analysis for {aiRecommendations.city_name || aiRecommendations.city || selectedCity}
+                      </h3>
+                      <div className="text-sm text-purple-800 dark:text-purple-400 space-y-1">
+                        {aiRecommendations.analysis_period_hours && (
+                          <p>Analysis Period: {aiRecommendations.analysis_period_hours} hours</p>
+                        )}
+                        {aiRecommendations.data_sources && aiRecommendations.data_sources.length > 0 && (
+                          <p>Data Sources: {aiRecommendations.data_sources.join(', ')}</p>
+                        )}
+                        {aiRecommendations.confidence !== undefined && (
+                          <p>Confidence: {(aiRecommendations.confidence * 100).toFixed(0)}%</p>
+                        )}
+                      </div>
+                    </div>
+                    {aiRecommendations.generated_at && (
+                      <span className="text-xs text-purple-600 dark:text-purple-400">
+                        {new Date(aiRecommendations.generated_at).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Recommendations List */}
+                {aiRecommendations.recommendations.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No specific recommendations at this time. City conditions are within normal parameters.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {aiRecommendations.recommendations.map((rec, index) => (
+                      <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getSeverityBadgeColor(rec.severity)}`}>
+                              {rec.severity.toUpperCase()}
+                            </span>
+                            <span className="ml-3 font-semibold text-gray-900 dark:text-white">
+                              Recommendation {index + 1}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action</h4>
+                            <p className="text-sm text-gray-900 dark:text-white">{rec.action}</p>
+                          </div>
+                          
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{rec.reason}</p>
+                          </div>
+                          
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Impact</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{rec.impact}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Info Section */}
