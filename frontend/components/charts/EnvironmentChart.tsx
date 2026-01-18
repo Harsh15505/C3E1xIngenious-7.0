@@ -20,7 +20,7 @@ export default function EnvironmentChart({ data }: EnvironmentChartProps) {
     }));
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Temperature & AQI (Last 24 Hours)</h3>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
@@ -58,6 +58,7 @@ export default function EnvironmentChart({ data }: EnvironmentChartProps) {
             stroke="#f97316" 
             strokeWidth={2}
             dot={false}
+            animationDuration={600}
             name="Temperature (°C)"
           />
           <Line 
@@ -67,6 +68,7 @@ export default function EnvironmentChart({ data }: EnvironmentChartProps) {
             stroke="#ef4444" 
             strokeWidth={2}
             dot={false}
+            animationDuration={600}
             name="AQI"
           />
         </LineChart>

@@ -20,7 +20,7 @@ export default function TrafficChart({ data }: TrafficChartProps) {
   });
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Congestion by Zone</h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData}>
@@ -45,9 +45,10 @@ export default function TrafficChart({ data }: TrafficChartProps) {
           <Legend />
           <Bar 
             dataKey="congestion" 
-            fill="#f97316" 
-            name="Congestion Level (%)"
-            radius={[8, 8, 0, 0]}
+            fill="#3b82f6" 
+            radius={[4, 4, 0, 0]} 
+            name="Congestion (%)"
+            animationDuration={700}
           />
         </BarChart>
       </ResponsiveContainer>

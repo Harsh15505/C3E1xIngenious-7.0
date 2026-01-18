@@ -132,17 +132,17 @@ export default function AlertsPage() {
     <ProtectedRoute requireAdmin={true}>
       <Header />
       
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Alert Management</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Alert Management</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
                 Create, monitor, and manage city alerts
               </p>
             </div>
-            <button className="bg-red-500 text-white px-6 py-2.5 rounded-md hover:bg-red-600 text-sm font-semibold flex items-center">
+            <button className="bg-red-500 text-white px-6 py-2.5 rounded-md hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-sm font-semibold flex items-center">
               <span className="mr-2">+</span> Create Alert
             </button>
           </div>
@@ -184,7 +184,7 @@ export default function AlertsPage() {
               {/* Refresh Button */}
               <button
                 onClick={loadAlerts}
-                className="flex items-center text-gray-600 hover:text-gray-800 text-sm font-medium"
+                className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white text-sm font-medium"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -203,46 +203,46 @@ export default function AlertsPage() {
               </svg>
             </div>
           ) : filteredAlerts.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
-              <p className="text-lg font-medium text-gray-900">No alerts found</p>
-              <p className="text-gray-500 mt-1">Try adjusting your filters</p>
+              <p className="text-lg font-medium text-gray-900 dark:text-white">No alerts found</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">Try adjusting your filters</p>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Alert
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Severity
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       City
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredAlerts.map((alert) => (
-                    <tr key={alert.id} className="hover:bg-gray-50 transition">
+                    <tr key={alert.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                       {/* Alert Column */}
                       <td className="px-6 py-4">
                         <div className="flex items-start">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mr-3 ${
-                            alert.severity === 'critical' || alert.severity === 'warning' ? 'bg-red-50' : 'bg-blue-50'
+                            alert.severity === 'critical' || alert.severity === 'warning' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'
                           }`}>
                             <svg className={`w-5 h-5 ${
                               alert.severity === 'critical' || alert.severity === 'warning' ? 'text-red-500' : 'text-blue-500'
@@ -251,8 +251,8 @@ export default function AlertsPage() {
                             </svg>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{alert.title}</p>
-                            <p className="text-sm text-gray-500">{alert.message}</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{alert.title}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{alert.message}</p>
                           </div>
                         </div>
                       </td>
@@ -270,7 +270,7 @@ export default function AlertsPage() {
 
                       {/* City Column */}
                       <td className="px-6 py-4">
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
                           {alert.city.charAt(0).toUpperCase() + alert.city.slice(1)}
                         </p>
                       </td>
@@ -278,7 +278,7 @@ export default function AlertsPage() {
                       {/* Status Column */}
                       <td className="px-6 py-4">
                         <span className={`text-sm font-medium ${
-                          alert.is_active ? 'text-red-600' : 'text-green-600'
+                          alert.is_active ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                         }`}>
                           {alert.is_active ? 'Active' : 'Resolved'}
                         </span>
@@ -286,7 +286,7 @@ export default function AlertsPage() {
 
                       {/* Time Column */}
                       <td className="px-6 py-4">
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {getRelativeTime(alert.created_at)}
                         </p>
                       </td>
@@ -297,7 +297,7 @@ export default function AlertsPage() {
                           {alert.is_active && (
                             <button
                               onClick={() => handleResolve(alert.id)}
-                              className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                              className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white font-medium"
                             >
                               Resolve
                             </button>

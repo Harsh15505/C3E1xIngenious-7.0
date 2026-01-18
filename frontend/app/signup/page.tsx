@@ -23,14 +23,32 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
 
+    const fullName = formData.fullName.trim();
+    const email = formData.email.trim();
+    const password = formData.password;
+    const confirmPassword = formData.confirmPassword;
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+    if (!fullName || fullName.length < 2) {
+      setError('Please enter your full name (at least 2 characters)');
+      setLoading(false);
+      return;
+    }
+
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
     // Validation
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError('Password must be at least 6 characters');
       setLoading(false);
       return;
@@ -44,9 +62,9 @@ export default function SignupPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          full_name: formData.fullName,
+          email,
+          password,
+          full_name: fullName,
           role: 'citizen'
         }),
       });
@@ -63,8 +81,8 @@ export default function SignupPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
+          email,
+          password
         }),
       });
 
@@ -93,17 +111,17 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
         <div className="max-w-md w-full mx-4">
-          <div className="bg-white rounded-lg shadow-lg p-8 border border-green-200 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-green-200 dark:border-green-800 text-center transition-colors duration-200">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 dark:bg-green-600 rounded-full mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
-            <p className="text-gray-600 mb-4">Your account has been created.</p>
-            <p className="text-sm text-gray-500">Redirecting you to the dashboard...</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Registration Successful!</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Your account has been created.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Redirecting you to the dashboard...</p>
           </div>
         </div>
       </div>
@@ -111,21 +129,21 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-800 py-12 transition-colors duration-200">
       <div className="max-w-md w-full mx-4">
         {/* Logo/Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-red-500 rounded-2xl mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-red-500 dark:bg-red-600 rounded-2xl mb-6 shadow-lg">
             <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-red-500">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join Urban Intelligence Platform</p>
+          <h1 className="text-4xl font-bold text-red-500 dark:text-red-400">Create Account</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Join Urban Intelligence Platform</p>
         </div>
 
         {/* Signup Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-200">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
@@ -134,7 +152,7 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="signup-fullname" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="signup-fullname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Full Name
               </label>
               <input
@@ -143,13 +161,13 @@ export default function SignupPage() {
                 value={formData.fullName}
                 onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
-                placeholder="John Doe"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
+                placeholder=""
               />
             </div>
 
             <div>
-              <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email Address
               </label>
               <input
@@ -158,13 +176,13 @@ export default function SignupPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
-                placeholder="your.email@example.com"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
+                placeholder=""
               />
             </div>
 
             <div>
-              <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
               </label>
               <input
@@ -174,14 +192,14 @@ export default function SignupPage() {
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
                 placeholder="••••••••"
               />
-              <p className="text-xs text-gray-500 mt-1">At least 6 characters</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">At least 6 characters</p>
             </div>
 
             <div>
-              <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Confirm Password
               </label>
               <input
@@ -191,7 +209,7 @@ export default function SignupPage() {
                 onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
                 placeholder="••••••••"
               />
             </div>
@@ -199,32 +217,32 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
           {/* Benefits */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
               Registration Benefits
             </h3>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Access to scenario simulation tools
               </li>
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Personalized alerts and notifications
               </li>
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Real-time city data and forecasts
@@ -235,13 +253,13 @@ export default function SignupPage() {
 
         {/* Login Link */}
         <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Already have an account?{' '}
-            <a href="/login" className="text-red-500 hover:text-red-600 font-medium">
+            <a href="/login" className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 font-medium">
               Sign In
             </a>
           </p>
-          <a href="/" className="text-sm text-gray-500 hover:text-gray-700 mt-2 inline-block">
+          <a href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mt-2 inline-block">
             ← Back to Home
           </a>
         </div>

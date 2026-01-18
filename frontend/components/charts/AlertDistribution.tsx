@@ -22,7 +22,7 @@ export default function AlertDistribution({ data }: AlertDistributionProps) {
   }));
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Alert Distribution</h3>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
@@ -34,6 +34,7 @@ export default function AlertDistribution({ data }: AlertDistributionProps) {
             label={(entry) => `${entry.name}: ${entry.value}`}
             outerRadius={80}
             fill="#8884d8"
+            animationDuration={700}
             dataKey="value"
           >
             {chartData.map((entry, index) => (

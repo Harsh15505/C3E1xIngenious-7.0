@@ -3,52 +3,65 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { authUtils } from '@/lib/auth';
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{ email: string; role: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  
+  // Safely use theme context with fallback
+  let theme = 'light';
+  let toggleTheme = () => {};
+  try {
+    const themeContext = useTheme();
+    theme = themeContext.theme;
+    toggleTheme = themeContext.toggleTheme;
+  } catch (e) {
+    // Theme context not available yet
+  }
 
   useEffect(() => {
+    setMounted(true);
     const userInfo = authUtils.getUserInfo();
     setUser(userInfo);
   }, []);
 
   const handleLogout = () => {
     authUtils.removeToken();
-    router.push('/login');
+    setUser(null);
+    router.push('/citizen/dashboard');
   };
 
-  if (!user) return null;
-
-  const isAdmin = user.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(path);
   };
 
   return (
-    <header className="bg-white border-b border-gray-200">
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-red-500 dark:bg-red-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105">
               <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Urban Intelligence</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Urban Intelligence</h1>
           </div>
 
           {/* Navigation */}
           <nav className="flex items-center space-x-2">
             <a 
               href={isAdmin ? "/municipal/dashboard" : "/citizen/dashboard"} 
-              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 isActive(isAdmin ? '/municipal/dashboard' : '/citizen/dashboard')
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,10 +72,10 @@ export default function Header() {
 
             <a 
               href={isAdmin ? "/municipal/alerts" : "/citizen/alerts"}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 isActive('/alerts')
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,10 +88,10 @@ export default function Header() {
               <>
                 <a 
                   href="/municipal/scenario" 
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                     isActive('/municipal/scenario')
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,10 +102,10 @@ export default function Header() {
 
                 <a 
                   href="/municipal/system-health" 
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                     isActive('/municipal/system-health')
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,18 +115,51 @@ export default function Header() {
                 </a>
               </>
             )}
-          </nav>
 
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>Logout</span>
-          </button>
+            {/* Theme Toggle - Only show when mounted to avoid hydration mismatch */}
+            {mounted && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+            )}
+
+            {/* Auth Buttons */}
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="ml-2 px-4 py-2 bg-red-500 dark:bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-600 dark:hover:bg-red-700 transition-all duration-200"
+              >
+                Logout
+              </button>
+            ) : (
+              <div className="flex items-center space-x-2 ml-2">
+                <a
+                  href="/login"
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200"
+                >
+                  Sign In
+                </a>
+                <a
+                  href="/signup"
+                  className="px-4 py-2 bg-red-500 dark:bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-600 dark:hover:bg-red-700 transition-all duration-200"
+                >
+                  Sign Up
+                </a>
+              </div>
+            )}
+          </nav>
         </div>
       </div>
     </header>

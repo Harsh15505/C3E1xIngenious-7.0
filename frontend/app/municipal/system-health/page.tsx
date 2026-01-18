@@ -63,12 +63,12 @@ export default function SystemHealthPage() {
     <ProtectedRoute requireAdmin={true}>
       <Header />
       
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">System Health Monitor</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Health Monitor</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
               Real-time monitoring of platform infrastructure and data pipelines
             </p>
           </div>
@@ -84,19 +84,19 @@ export default function SystemHealthPage() {
             <>
               {/* System Status Cards */}
               <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-2">API Status</p>
-                      <p className="text-2xl font-bold text-gray-900">Operational</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">API Status</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">Operational</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                       <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
                       </svg>
                     </div>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -104,13 +104,13 @@ export default function SystemHealthPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-2">Database Status</p>
-                      <p className="text-2xl font-bold text-gray-900">Operational</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Database Status</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">Operational</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                       <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z" />
                         <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z" />
@@ -118,7 +118,7 @@ export default function SystemHealthPage() {
                       </svg>
                     </div>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -126,19 +126,19 @@ export default function SystemHealthPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-2">Scheduler Status</p>
-                      <p className="text-2xl font-bold text-gray-900">Operational</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Scheduler Status</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">Operational</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                       <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
                       </svg>
                     </div>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -149,39 +149,39 @@ export default function SystemHealthPage() {
 
               {/* Metrics Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <p className="text-sm text-gray-600 mb-2">Active Cities</p>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Active Cities</p>
                   <p className="text-4xl font-bold text-red-500">4</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <p className="text-sm text-gray-600 mb-2">Data Points Processed</p>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Data Points Processed</p>
                   <p className="text-4xl font-bold text-red-500">1.2M</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <p className="text-sm text-gray-600 mb-2">Alerts Generated</p>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Alerts Generated</p>
                   <p className="text-4xl font-bold text-red-500">12</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <p className="text-sm text-gray-600 mb-2">API Calls</p>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">API Calls</p>
                   <p className="text-4xl font-bold text-red-500">842K</p>
                 </div>
               </div>
 
               {/* Data Freshness */}
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Data Freshness</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Data Freshness</h2>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="text-lg font-semibold text-gray-900 mb-1">Environment Data</p>
-                        <p className="text-sm text-gray-600">Temperature, AQI, Humidity</p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Environment Data</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Temperature, AQI, Humidity</p>
                       </div>
                       <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -189,17 +189,17 @@ export default function SystemHealthPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="text-lg font-semibold text-gray-900 mb-1">Traffic Data</p>
-                        <p className="text-sm text-gray-600">Flow, Congestion, Incidents</p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Traffic Data</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Flow, Congestion, Incidents</p>
                       </div>
                       <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -207,17 +207,17 @@ export default function SystemHealthPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="text-lg font-semibold text-gray-900 mb-1">Service Data</p>
-                        <p className="text-sm text-gray-600">Outages, Degradation, Status</p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Service Data</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Outages, Degradation, Status</p>
                       </div>
                       <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -229,61 +229,61 @@ export default function SystemHealthPage() {
 
               {/* System Performance */}
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">System Performance</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">System Performance</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Average Response Time */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-lg font-semibold text-gray-900">Average Response Time</p>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-white">Average Response Time</p>
                       <p className="text-2xl font-bold text-red-500">127ms</p>
                     </div>
                     <div className="relative pt-1">
-                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200">
+                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
                         <div style={{ width: '63.5%' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-red-500 rounded-full"></div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">Target: 200ms</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Target: 200ms</p>
                     </div>
                   </div>
 
                   {/* CPU Usage */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-lg font-semibold text-gray-900">CPU Usage</p>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-white">CPU Usage</p>
                       <p className="text-2xl font-bold text-green-500">42%</p>
                     </div>
                     <div className="relative pt-1">
-                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200">
+                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
                         <div style={{ width: '42%' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 rounded-full"></div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">Healthy range</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Healthy range</p>
                     </div>
                   </div>
 
                   {/* Memory Usage */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-lg font-semibold text-gray-900">Memory Usage</p>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-white">Memory Usage</p>
                       <p className="text-2xl font-bold text-blue-500">58%</p>
                     </div>
                     <div className="relative pt-1">
-                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200">
+                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
                         <div style={{ width: '58%' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 rounded-full"></div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">Healthy range</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Healthy range</p>
                     </div>
                   </div>
 
                   {/* Request Rate */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-lg font-semibold text-gray-900">Request Rate</p>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-white">Request Rate</p>
                       <p className="text-2xl font-bold text-red-500">2.4K/min</p>
                     </div>
                     <div className="relative pt-1">
-                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200">
+                      <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
                         <div style={{ width: '80%' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-red-500 rounded-full"></div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">Within capacity</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Within capacity</p>
                     </div>
                   </div>
                 </div>
@@ -291,22 +291,22 @@ export default function SystemHealthPage() {
 
               {/* System Alerts */}
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">System Alerts</h2>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">System Alerts</h2>
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
                   <div className="flex items-center">
                     <svg className="w-8 h-8 text-green-500 mr-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     <div>
-                      <p className="text-lg font-semibold text-green-900">All Systems Operational</p>
-                      <p className="text-sm text-green-700 mt-1">No critical alerts. System performing optimally.</p>
+                      <p className="text-lg font-semibold text-green-900 dark:text-green-300">All Systems Operational</p>
+                      <p className="text-sm text-green-700 dark:text-green-400 mt-1">No critical alerts. System performing optimally.</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Footer Info */}
-              <div className="text-center text-sm text-gray-500">
+              <div className="text-center text-sm text-gray-500 dark:text-gray-400">
                 Last updated: {lastUpdate.toLocaleTimeString()} • Auto-refresh every 60 seconds
               </div>
             </>

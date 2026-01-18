@@ -32,6 +32,10 @@ export default function ScenarioPage() {
       const enrichedInput = {
         ...scenarioInput,
         trafficDensityChange: (trafficMultiplier - 1.0) * 100,
+        trafficMultiplier,
+        temperatureChange,
+        aqiChange,
+        serviceDegradation,
       };
       const result = await api.simulateScenario(selectedCity.toLowerCase(), enrichedInput);
       setSimulationResult(result);
@@ -61,21 +65,21 @@ export default function ScenarioPage() {
     <ProtectedRoute requireAdmin={true}>
       <Header />
       
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Scenario Builder</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Scenario Builder</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Simulate "what-if" scenarios to predict system behavior and prepare response plans
             </p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Input Panel */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                <svg className="w-5 h-5 text-red-500 dark:text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
                 </svg>
                 Scenario Parameters
@@ -83,13 +87,13 @@ export default function ScenarioPage() {
 
               {/* City Selector */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   Select City
                 </label>
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700"
                 >
                   {cities.map((city) => (
                     <option key={city} value={city}>
@@ -101,7 +105,7 @@ export default function ScenarioPage() {
 
               {/* Temperature Change */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-3">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                   Temperature Change: {temperatureChange > 0 ? '+' : ''}{temperatureChange}°C
                 </label>
                 <input
@@ -111,12 +115,12 @@ export default function ScenarioPage() {
                   step="1"
                   value={temperatureChange}
                   onChange={(e) => setTemperatureChange(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                   style={{
                     accentColor: '#ef4444'
                   }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
                   <span>-10°C</span>
                   <span>0°C</span>
                   <span>+10°C</span>
@@ -125,7 +129,7 @@ export default function ScenarioPage() {
 
               {/* AQI Change */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-3">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                   AQI Change: {aqiChange > 0 ? '+' : ''}{aqiChange}
                 </label>
                 <input
@@ -135,12 +139,12 @@ export default function ScenarioPage() {
                   step="10"
                   value={aqiChange}
                   onChange={(e) => setAqiChange(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                   style={{
                     accentColor: '#ef4444'
                   }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
                   <span>-100</span>
                   <span>0</span>
                   <span>+100</span>
@@ -149,7 +153,7 @@ export default function ScenarioPage() {
 
               {/* Traffic Multiplier */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-3">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                   Traffic Multiplier: {trafficMultiplier.toFixed(1)}x
                 </label>
                 <input
@@ -159,12 +163,12 @@ export default function ScenarioPage() {
                   step="0.1"
                   value={trafficMultiplier}
                   onChange={(e) => setTrafficMultiplier(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                   style={{
                     accentColor: '#ef4444'
                   }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
                   <span>0.5x (Less)</span>
                   <span>1.0x (Normal)</span>
                   <span>2.0x (Heavy)</span>
@@ -173,7 +177,7 @@ export default function ScenarioPage() {
 
               {/* Service Degradation */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-3">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                   Service Degradation: {serviceDegradation}%
                 </label>
                 <input
@@ -183,12 +187,12 @@ export default function ScenarioPage() {
                   step="5"
                   value={serviceDegradation}
                   onChange={(e) => setServiceDegradation(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                   style={{
                     accentColor: '#ef4444'
                   }}
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
                   <span>0%</span>
                   <span>25%</span>
                   <span>50%</span>
@@ -206,7 +210,7 @@ export default function ScenarioPage() {
                 <button
                   onClick={handleSimulate}
                   disabled={loading}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-full bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {loading ? (
                     <>
@@ -227,7 +231,7 @@ export default function ScenarioPage() {
                 </button>
                 <button
                   onClick={resetScenario}
-                  className="w-full py-3 px-6 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition flex items-center justify-center"
+                  className="w-full py-3 px-6 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -237,16 +241,16 @@ export default function ScenarioPage() {
               </div>
 
               {error && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm text-red-600">{error}</p>
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                 </div>
               )}
             </div>
 
             {/* Results Panel */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                <svg className="w-5 h-5 text-red-500 dark:text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
                 </svg>
                 Simulation Results
@@ -263,48 +267,48 @@ export default function ScenarioPage() {
               ) : (
                 <div className="space-y-4">
                   {/* Overall Confidence */}
-                  <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                    <p className="text-sm text-gray-600 mb-1">Simulation Confidence</p>
-                    <p className="text-3xl font-bold text-orange-600">
+                  <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border-l-4 border-orange-500 dark:border-orange-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Simulation Confidence</p>
+                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                       {(simulationResult.overall_confidence * 100).toFixed(1)}%
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Based on {simulationResult.impacts?.length || 0} impact factors
                     </p>
                   </div>
 
                   {/* Recommendation */}
                   {simulationResult.recommendation && (
-                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                      <p className="text-sm font-medium text-gray-700 mb-1">Recommendation</p>
-                      <p className="text-sm text-gray-800">{simulationResult.recommendation}</p>
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500 dark:border-blue-600">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Recommendation</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-300">{simulationResult.recommendation}</p>
                     </div>
                   )}
 
                   {/* Impact Details */}
                   {simulationResult.impacts && simulationResult.impacts.length > 0 && (
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-3">Impact Analysis</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-white mb-3">Impact Analysis</h3>
                       <div className="space-y-3">
                         {simulationResult.impacts.map((impact: any, idx: number) => (
-                          <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                             <div className="flex justify-between items-start mb-2">
-                              <span className="text-sm font-medium text-gray-900">{impact.metric}</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">{impact.metric}</span>
                               <span className={`text-xs px-2 py-1 rounded ${
-                                impact.direction === 'decrease' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                impact.direction === 'decrease' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                               }`}>
                                 {impact.direction === 'decrease' ? '↓' : '↑'} {Math.abs(impact.change_percent)}%
                               </span>
                             </div>
-                            <div className="text-xs text-gray-600 mb-1">
+                            <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">
                               <span className="font-medium">Baseline:</span> {impact.baseline} → 
                               <span className="font-medium ml-1">Predicted:</span> {impact.predicted}
                             </div>
-                            <div className="text-xs text-gray-500 mt-2">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                               <span className="font-medium">Confidence:</span> {(impact.confidence * 100).toFixed(0)}%
                             </div>
                             {impact.explanation && (
-                              <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-300">
+                              <div className="text-xs text-gray-600 dark:text-gray-300 mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
                                 {impact.explanation}
                               </div>
                             )}
@@ -316,18 +320,18 @@ export default function ScenarioPage() {
 
                   {/* Explanation */}
                   {simulationResult.explanation && (
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <h3 className="font-medium text-gray-900 mb-2">Detailed Explanation</h3>
-                      <p className="text-sm text-gray-700 whitespace-pre-line">{simulationResult.explanation}</p>
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <h3 className="font-medium text-gray-900 dark:text-white mb-2">Detailed Explanation</h3>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{simulationResult.explanation}</p>
                     </div>
                   )}
 
                   {/* Scenario ID */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-xs text-gray-500">
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Scenario ID: <span className="font-mono">{simulationResult.scenario_id}</span>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Simulated at: {simulationResult.simulated_at ? new Date(simulationResult.simulated_at).toLocaleString() : 'Invalid Date'}
                     </p>
                   </div>
@@ -337,14 +341,14 @@ export default function ScenarioPage() {
           </div>
 
           {/* Info Section */}
-          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
             <div className="flex">
-              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <h3 className="font-medium text-blue-900 mb-2">How Scenario Simulation Works</h3>
-                <p className="text-sm text-blue-800">
+                <h3 className="font-medium text-blue-900 dark:text-blue-300 mb-2">How Scenario Simulation Works</h3>
+                <p className="text-sm text-blue-800 dark:text-blue-300">
                   The scenario engine applies your parameter changes to current city conditions and runs predictive models 
                   to forecast system behavior. It considers environmental factors, traffic patterns, service capacity, and 
                   historical trends to generate risk scores and actionable recommendations. Use this tool to prepare contingency 

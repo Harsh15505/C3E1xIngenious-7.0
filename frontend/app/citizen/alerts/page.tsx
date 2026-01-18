@@ -35,7 +35,28 @@ export default function CitizenAlertsPage() {
     try {
       const allAlerts: Alert[] = [];
       for (const city of cities) {
-        const cityAlerts = await api.getPublicAlerts(city);
+        const cityKey = city.toLowerCase();
+
+        // Fetch existing alerts; if none, attempt to generate and re-fetch
+        let res = await api.getAlerts(cityKey, { active_only: true, limit: 50 });
+        if (!res?.alerts || res.alerts.length === 0) {
+          try {
+            await api.generateAlerts(cityKey);
+            res = await api.getAlerts(cityKey, { active_only: true, limit: 50 });
+          } catch (genErr) {
+            console.warn(`Alert generation failed for ${cityKey}:`, genErr);
+          }
+        }
+
+        const cityAlerts = (res?.alerts || [])
+          .filter((a: any) => (a.audience?.toLowerCase?.() === 'public') || (a.audience?.toLowerCase?.() === 'both'))
+          .map((a: any) => ({
+          alert_id: a.id || a.alert_id,
+          city: city,
+          severity: a.severity,
+          message: a.title || a.message,
+          created_at: a.created_at,
+        }));
         allAlerts.push(...cityAlerts);
       }
       // Sort by created_at descending
@@ -86,28 +107,28 @@ export default function CitizenAlertsPage() {
     <ProtectedRoute>
       <Header />
       
-      <main className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
+      <main className="min-h-screen bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Public Alerts</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Public Alerts</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
               Stay informed about important updates in your city
             </p>
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700 transition-colors duration-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* City Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Select City
                 </label>
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                 >
                   <option value="all">All Cities</option>
                   {cities.map((city) => (
@@ -118,13 +139,13 @@ export default function CitizenAlertsPage() {
 
               {/* Severity Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Filter by Severity
                 </label>
                 <select
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                 >
                   <option value="all">All Severities</option>
                   <option value="critical">Critical</option>
@@ -135,13 +156,13 @@ export default function CitizenAlertsPage() {
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-              <p className="text-sm text-gray-600">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Showing <span className="font-medium">{filteredAlerts.length}</span> alerts
               </p>
               <button
                 onClick={loadAlerts}
-                className="text-orange-600 hover:text-orange-700 text-sm font-medium flex items-center"
+                className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 text-sm font-medium flex items-center transition"
               >
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -160,23 +181,23 @@ export default function CitizenAlertsPage() {
               </svg>
             </div>
           ) : filteredAlerts.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center border border-gray-200">
-              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+              <svg className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-lg font-medium text-gray-900">No alerts at this time</p>
-              <p className="text-gray-500 mt-1">Check back later for updates</p>
+              <p className="text-lg font-medium text-gray-900 dark:text-white">No alerts at this time</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">Check back later for updates</p>
             </div>
           ) : (
             <div className="space-y-4">
               {filteredAlerts.map((alert) => (
                 <div
                   key={alert.alert_id}
-                  className={`bg-white rounded-lg shadow-md p-6 border-l-4 hover:shadow-lg transition ${
-                    alert.severity === 'critical' ? 'border-red-500' :
-                    alert.severity === 'high' ? 'border-orange-500' :
-                    alert.severity === 'medium' ? 'border-yellow-500' :
-                    'border-green-500'
+                  className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 hover:shadow-lg transition-all duration-200 ${
+                    alert.severity === 'critical' ? 'border-red-500 dark:border-red-600' :
+                    alert.severity === 'high' ? 'border-orange-500 dark:border-orange-600' :
+                    alert.severity === 'medium' ? 'border-yellow-500 dark:border-yellow-600' :
+                    'border-green-500 dark:border-green-600'
                   }`}
                 >
                   <div className="flex items-start">
@@ -186,12 +207,12 @@ export default function CitizenAlertsPage() {
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(alert.severity)}`}>
                           {alert.severity.toUpperCase()}
                         </span>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
                           📍 {alert.city.charAt(0).toUpperCase() + alert.city.slice(1)}
                         </span>
                       </div>
-                      <p className="text-gray-900 text-lg mb-2">{alert.message}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-gray-900 dark:text-white text-lg mb-2">{alert.message}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {new Date(alert.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -202,14 +223,14 @@ export default function CitizenAlertsPage() {
           )}
 
           {/* Info Box */}
-          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 transition-colors duration-200">
             <div className="flex">
-              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <h3 className="font-medium text-blue-900 mb-2">About Public Alerts</h3>
-                <p className="text-sm text-blue-800">
+                <h3 className="font-medium text-blue-900 dark:text-blue-300 mb-2">About Public Alerts</h3>
+                <p className="text-sm text-blue-800 dark:text-blue-400">
                   These alerts are issued by municipal authorities to inform citizens about important events, 
                   environmental conditions, service disruptions, and safety advisories. Please follow any 
                   instructions provided in critical alerts and stay informed about conditions in your area.
