@@ -58,6 +58,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://localhost:3001",  # Frontend often runs on 3001 when 3000 is busy
         "https://c3-e1x-ingenious-7-0-y7f6.vercel.app"
     ],
     allow_credentials=True,
@@ -199,7 +200,7 @@ async def city_websocket(websocket: WebSocket, city: str):
         logger.error(f"WebSocket error for city {city}: {e}")
 
 # Import and include routers
-from app.api.v1 import ingest, scenario, system, analytics, alerts, auth, citizen
+from app.api.v1 import ingest, scenario, system, analytics, alerts, auth, citizen, ai
 app.include_router(auth.router, prefix="/api/v1", tags=["authentication"])
 app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["ingestion"])
 app.include_router(scenario.router, prefix="/api/v1/scenario", tags=["scenario"])
@@ -207,3 +208,4 @@ app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
 app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
 app.include_router(citizen.router, prefix="/api/v1/citizen", tags=["citizen-participation"])
+app.include_router(ai.router, prefix="/api/v1/ai", tags=["ai-intelligence"])

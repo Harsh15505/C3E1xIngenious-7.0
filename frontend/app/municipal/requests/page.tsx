@@ -71,10 +71,12 @@ export default function CitizenRequestsPage() {
   const handleUpdateStatus = async (requestId: string, newStatus: string, notes: string) => {
     try {
       if (activeTab === 'dataset') {
-        await api.updateDatasetRequest(requestId, { status: newStatus, adminNotes: notes });
+        await api.updateDatasetRequest(requestId, { status: newStatus as 'pending' | 'approved' | 'rejected', adminNotes: notes });
         showToast('Dataset request updated successfully', 'success');
       } else {
-        await api.updateCorrectionRequest(requestId, { status: newStatus, adminNotes: notes });
+        // Correction requests have different statuses: pending, investigating, resolved, rejected
+        const correctionStatus = newStatus === 'approved' ? 'resolved' : newStatus;
+        await api.updateCorrectionRequest(requestId, { status: correctionStatus as 'pending' | 'investigating' | 'resolved' | 'rejected', adminResponse: notes });
         showToast('Correction request updated successfully', 'success');
       }
       setShowModal(false);

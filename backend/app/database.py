@@ -9,36 +9,36 @@ from pathlib import Path
 
 settings = get_settings()
 
+# Tortoise ORM configuration for Aerich migrations
+ca_cert_path = Path(__file__).parent.parent / 'ca-certificate.crt'
+ssl_context = ssl.create_default_context(cafile=str(ca_cert_path))
+
+TORTOISE_ORM = {
+    'connections': {
+        'default': {
+            'engine': 'tortoise.backends.asyncpg',
+            'credentials': {
+                'host': settings.DB_HOST,
+                'port': settings.DB_PORT,
+                'user': settings.DB_USER,
+                'password': settings.DB_PASSWORD,
+                'database': settings.DB_NAME,
+                'ssl': ssl_context
+            }
+        }
+    },
+    'apps': {
+        'models': {
+            'models': ['app.models', 'aerich.models'],
+            'default_connection': 'default',
+        }
+    }
+}
+
 
 async def init_db():
     """Initialize database connection"""
-    # Load CA certificate for Aiven PostgreSQL
-    ca_cert_path = Path(__file__).parent.parent / 'ca-certificate.crt'
-    ssl_context = ssl.create_default_context(cafile=str(ca_cert_path))
-    
-    await Tortoise.init(
-        config={
-            'connections': {
-                'default': {
-                    'engine': 'tortoise.backends.asyncpg',
-                    'credentials': {
-                        'host': settings.DB_HOST,
-                        'port': settings.DB_PORT,
-                        'user': settings.DB_USER,
-                        'password': settings.DB_PASSWORD,
-                        'database': settings.DB_NAME,
-                        'ssl': ssl_context
-                    }
-                }
-            },
-            'apps': {
-                'models': {
-                    'models': ['app.models'],
-                    'default_connection': 'default',
-                }
-            }
-        }
-    )
+    await Tortoise.init(config=TORTOISE_ORM)
     await Tortoise.generate_schemas()
 
 

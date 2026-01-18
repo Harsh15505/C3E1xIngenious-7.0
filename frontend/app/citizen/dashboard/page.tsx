@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import AIChatPanel from '@/components/AIChatPanel';
 import { api } from '@/lib/api';
 import { authUtils } from '@/lib/auth';
 
@@ -60,6 +61,8 @@ export default function CitizenDashboard() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [selectedCity, setSelectedCity] = useState('Ahmedabad');
   const [cities, setCities] = useState<string[]>(['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Gandhinagar']);
+  const [citiesWithIds, setCitiesWithIds] = useState<{id: string; name: string}[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [environmentStats, setEnvironmentStats] = useState<{ aqi: number | null; temp: number | null }>({ aqi: null, temp: null });
   const [citySummary, setCitySummary] = useState<{ summary?: string; key_insights?: string[]; confidence?: number; explanation?: string }>({});
@@ -147,7 +150,15 @@ export default function CitizenDashboard() {
     try {
       const metadata = await api.getMetadata();
       if (metadata.cities) {
-        setCities(metadata.cities.map((c: any) => c.name));
+        const cityList = metadata.cities.map((c: any) => ({ id: c.id, name: c.name }));
+        setCitiesWithIds(cityList);
+        setCities(cityList.map((c: any) => c.name));
+        
+        // Set initial city ID
+        const initialCity = cityList.find((c: any) => c.name === selectedCity);
+        if (initialCity) {
+          setSelectedCityId(initialCity.id);
+        }
       }
     } catch (error) {
       console.error('Error loading metadata:', error);
@@ -519,6 +530,23 @@ export default function CitizenDashboard() {
               </div>
             </div>
           </div>
+
+          {/* AI Chat Panel */}
+          {citiesWithIds.length > 0 && selectedCityId && (
+            <div className="mb-8">
+              <AIChatPanel
+                cities={citiesWithIds}
+                selectedCityId={selectedCityId}
+                onCityChange={(cityId) => {
+                  setSelectedCityId(cityId);
+                  const city = citiesWithIds.find(c => c.id === cityId);
+                  if (city) {
+                    setSelectedCity(city.name);
+                  }
+                }}
+              />
+            </div>
+          )}
 
           {/* Citizen Actions (public view, auth redirect) */}
           <div className="mb-8">

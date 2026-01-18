@@ -382,3 +382,37 @@ class DataCorrectionRequest(Model):
         table = "data_correction_requests"
         indexes = ["status", "created_at", "data_type"]
 
+
+# ========================================
+# AI SYSTEM MODELS
+# ========================================
+
+class AIQueryLog(Model):
+    """Audit log for all AI query interactions"""
+    id = fields.UUIDField(pk=True)
+    
+    # Query details
+    user = fields.ForeignKeyField("models.User", related_name="ai_queries", null=True)  # Null for anonymous queries
+    city = fields.ForeignKeyField("models.City", related_name="ai_queries")
+    query_text = fields.TextField()
+    query_type = fields.CharField(max_length=20)  # citizen, admin
+    
+    # Intent classification
+    detected_intent = fields.CharField(max_length=50)  # RISK, AIR, TRAFFIC, ALERT, GENERAL, INVALID
+    is_valid_domain = fields.BooleanField(default=True)
+    
+    # Response details
+    ai_response = fields.TextField()
+    confidence_score = fields.FloatField()  # 0.0 - 1.0
+    data_sources = fields.JSONField()  # List of data types used: ["AQI", "Traffic", "Alerts"]
+    
+    # Performance metrics
+    response_time_ms = fields.IntField()  # Time taken to generate response
+    model_used = fields.CharField(max_length=100)  # e.g., "groq:llama-3.1-70b"
+    
+    # Metadata
+    created_at = fields.DatetimeField(auto_now_add=True)
+    
+    class Meta:
+        table = "ai_query_logs"
+        indexes = ["created_at", "query_type", "detected_intent", "is_valid_domain"]

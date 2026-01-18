@@ -2,20 +2,24 @@
 
 > **"This system predicts problems early."**
 
-A state-level Urban Intelligence Platform for **early risk prediction and decision support** in urban systems, built for trustworthy and scalable digital operations.
+A state-level Urban Intelligence Platform for **early risk prediction, AI-powered decision support, and citizen engagement** in urban systems, built for trustworthy and scalable digital operations.
 
 ## 🎯 Project Overview
 
-This platform enables municipal data officers to:
+This platform enables municipal data officers and citizens to:
 - **Predict** environmental and service risks up to 7 days in advance
+- **Ask AI** natural language questions about city conditions (air quality, traffic, alerts)
 - **Test** policy decisions through what-if scenario analysis
-- **Monitor** system health and data freshness
+- **Monitor** system health and data freshness in real-time
 - **Alert** citizens and officials proactively
+- **Participate** through data correction requests and dataset access
 
 ### Core Domains
 - **Environment**: AQI, PM2.5, temperature, rainfall
 - **Public Services**: Water supply stress, waste collection, outages
 - **Traffic**: Congestion, density, heavy vehicle movement (as causal layer)
+- **AI Intelligence**: Natural language query system with domain validation
+- **Citizen Engagement**: Data requests, issue reporting, transparency
 
 ---
 
@@ -27,14 +31,18 @@ This platform enables municipal data officers to:
 ### Tech Stack
 
 #### Backend
-- **FastAPI** (Python)
-- **PostgreSQL** + **Tortoise ORM**
+- **FastAPI** (Python) with JWT authentication
+- **PostgreSQL** (Aiven Cloud) + **Tortoise ORM**
+- **GROQ API** (Llama 3.1 70B) for AI explanations
 - Pandas, NumPy, scikit-learn for analytics
+- APScheduler for background jobs
 
 #### Frontend
-- **Next.js**
-- Chart.js / Recharts
-- Simple city-level visualization
+- **Next.js 14** (TypeScript, App Router)
+- **Dark Mode** support with system-wide theme toggle
+- Tailwind CSS for responsive design
+- Real-time WebSocket updates
+- Chart.js / Recharts for visualization
 
 ---
 
@@ -66,9 +74,17 @@ This platform enables municipal data officers to:
 │   │   │   │   ├── anomaly.py
 │   │   │   │   └── risk.py
 │   │   │   │
-│   │   │   ├── scenario/           # What-if engine (CENTERPIECE)
-│   │   │   │   ├── engine.py
-│   │   │   │   └── explainer.py
+│   │   │   ├── si/                 # 🌟 AI Intelligence NEW
+│   │   │   │   ├── citizen_ai.py   # Natural language query system
+│   │   │   │   └── admin_ai.py     # Policy recommendation engine
+│   │   │   │
+│   │   │   ├── alerts/             # Alert management
+│   │   │   │   ├── generator.py
+│   │   │   │   └── router.py
+│   │   │   │
+│   │   │   ├── auth/               # 🌟 Authentication NEW
+│   │   │   │   ├── utils.py        # JWT token handling
+│   │   │   │   └── middleware.py   # Auth middleware.py
 │   │   │   │
 │   │   │   ├── alerts/             # Alert management
 │   │   │   │   ├── generator.py
@@ -77,7 +93,9 @@ This platform enables municipal data officers to:
 │   │   │   └── trust/              # System health & trust
 │   │   │       ├── health.py
 │   │   │       └── audit.py
-│   │   │
+│   │   │auth.py         # 🌟 Auth endpoints NEW
+│   │   │       ├── citizen.py      # 🌟 Citizen participation NEW
+│   │   │       ├── ai.py           # 🌟 AI query endpoints NEW
 │   │   ├── api/
 │   │   │   └── v1/
 │   │   │       ├── ingest.py       # Ingestion endpoints
@@ -99,23 +117,54 @@ This platform enables municipal data officers to:
 │   │
 │   ├── tests/
 │   │   ├── test_ingestion.py
-│   │   ├── test_analytics.py
-│   │   └── test_scenario.py
-│   │
-│   ├── requirements.txt
-│   └── pyproject.toml
-│
-├── frontend/
-│   ├── app/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx                # Landing
-│   │   ├── municipal/              # Municipal dashboard
+│   │   ├── login/                  # 🌟 Authentication NEW
 │   │   │   └── page.tsx
+│   │   ├── signup/                 # 🌟 Registration NEW
+│   │   │   └── page.tsx
+│   │   ├── municipal/              # 🌟 Admin Panel NEW
+│   │   │   ├── dashboard/
+│   │   │   │   └── page.tsx
+│   │   │   ├── scenario/
+│   │   │   │   └── page.tsx
+│   │   │   ├── system-health/
+│   │   │   │   └── page.tsx
+│   │   │   ├── alerts/
+│   │   │   │   └── page.tsx
+│   │   │   └── requests/           # 🌟 Citizen requests management NEW
+│   │   │       └── page.tsx
 │   │   └── citizen/                # Citizen portal
-│   │       └── page.tsx
+│   │       ├── dashboard/
+│   │       │   └── page.tsx
+│   │       ├── alerts/
+│   │       │   └── page.tsx
+│   │       ├── simulator/
+│   │       │   └── page.tsx
+│   │       ├── report-issue/       # 🌟 Data correction NEW
+│   │       │   └── page.tsx
+│   │       └── dataset-request/    # 🌟 Data access request NEW
+│   │           └── page.tsx
 │   │
 │   ├── components/
+│   │   ├── Header.tsx              # Navigation with auth & theme
+│   │   ├── ProtectedRoute.tsx      # 🌟 Auth guard NEW
+│   │   ├── AIChatPanel.tsx         # 🌟 AI query interface NEW
 │   │   ├── charts/
+│   │   │   ├── ForecastChart.tsx
+│   │   │   └── RiskIndicator.tsx
+│   │   ├── alerts/
+│   │   │   └── AlertCard.tsx
+│   │   └── trust/
+│   │       ├── FreshnessIndicator.tsx
+│   │       └── SystemHealth.tsx
+│   │
+│   ├── contexts/
+│   │   ├── ThemeContext.tsx        # 🌟 Dark mode NEW
+│   │   ├── ToastContext.tsx        # 🌟 Notifications NEW
+│   │   └── AuthContext.tsx         # 🌟 Auth state NEW
+│   │
+│   ├── lib/
+│   │   ├── api.ts                  # API client (expanded)
+│   │   └── auth.ts                 # 🌟 Auth utilities NEW
 │   │   │   ├── ForecastChart.tsx
 │   │   │   └── RiskIndicator.tsx
 │   │   ├── alerts/
@@ -272,14 +321,18 @@ PROJECT_NAME="Urban Intelligence Platform"
 FRESHNESS_THRESHOLD_CRITICAL=60
 FRESHNESS_THRESHOLD_WARNING=30
 
-# Forecasting
-FORECAST_DAYS=7
+# FoTailwind CSS** - Utility-first CSS framework
+- **Dark Mode** - System-wide theme toggle with persistence
+- **React Context API** - State management (Theme, Auth, Toast)
+- **WebSocket** - Real-time city data updates
+- **Chart.js / Recharts** - Data visualization
+- **React** - UI component library
 
-# Risk Thresholds
-RISK_THRESHOLD_HIGH=0.7
-RISK_THRESHOLD_MEDIUM=0.4
-```
-
+### Infrastructure
+- **Python 3.12+** - Modern Python runtime
+- **Node.js 18+** - JavaScript runtime
+- **Uvicorn** - ASGI server for FastAPI
+- **Aiven PostgreSQL** - Managed cloud database with SSL
 ### Frontend (.env.local)
 
 ```bash
@@ -357,7 +410,81 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - All ingestion events logged
 - Analytics runs tracked
 - Scenario simulations recorded
-- System health events captured
+- Sy🌟 NEW: AI Intelligence System
+
+**Citizen AI - Natural Language Query System:**
+- Ask questions in plain English: "What's the air quality today?", "Is traffic heavy?"
+- **Domain Validation**: Only answers questions about air quality, traffic, alerts, safety
+- **Safety Guardrails**: Blocks politics, coding, jokes, personal questions, general knowledge
+- **Intent Detection**: Automatically classifies queries (RISK, AIR, TRAFFIC, ALERT, GENERAL)
+- **Data-Grounded**: Fetches real-time environment, traffic, and alert data
+- **GROQ-Powered Explanations**: Uses Llama 3.1 70B for natural language responses
+- **Confidence Scoring**: Shows confidence level (High/Medium/Low) based on data availability
+- **Audit Logging**: All queries logged for transparency and accountability
+- **Collapsible Chat Panel**: Integrated into citizen dashboard with dark mode support
+
+**Example Queries:**
+- ✅ "What's the current air quality in Ahmedabad?"
+- ✅ "Are there any active alerts for my city?"
+- ✅ "Is traffic congestion high right now?"
+- ✅ "What are the health risks today?"
+- ❌ "Who is the mayor?" (Blocked - politics)
+- ❌ "Write me Python code" (Blocked - coding)
+
+### 🌟 NEW: User Authentication & Authorization
+
+**Role-Based Access Control:**
+- **Admin Users**: Full access to municipal dashboard, scenario testing, system health, citizen request management
+- **Citizen Users**: Access to public dashboard, AI queries, alerts, simulator, data requests
+- **JWT Tokens**: Secure authentication with 24-hour expiry
+- **Password Security**: Bcrypt hashing with salt rounds
+- **Protected Routes**: Frontend route guards based on user role
+- **Session Management**: Persistent login with localStorage
+
+**Authentication Endpoints:**
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/login` - User login (returns JWT)
+- `GET /api/v1/auth/me` - Get current user info
+- `POST /api/v1/auth/change-password` - Change password
+
+### 🌟 NEW: Citizen Participation & Transparency
+
+**Data Correction Requests:**
+- Citizens can report incorrect data (environment, traffic, services)
+- Admin review workflow with status tracking (pending → investigating → resolved/rejected)
+- Supporting evidence upload
+- Admin response notes
+- Email notifications
+
+**Dataset Access Requests:**
+- Citizens can request access to specific datasets
+- Justified reasons required
+- Admin approval workflow
+- Status tracking (pending → approved/rejected)
+- Admin notes and feedback
+
+**Admin Request Management:**
+- Unified dashboard at `/municipal/requests`
+- Two tabs: Dataset Requests & Data Corrections
+- Filter by status, type, city
+- Click-to-expand modal with full details
+- Update status and add admin notes
+- Reviewer tracking and timestamps
+
+### 🌟 NEW: Dark Mode Theme System
+
+**Features:**
+- System-wide dark mode toggle (top-right header)
+- Persistent theme preference (localStorage)
+- Smooth color transitions (200ms duration)
+- Tailwind CSS dark: variants throughout
+- Optimized color palettes:
+  - Light: gray-50/100/200 backgrounds, gray-900/700 text
+  - Dark: gray-900/800/700 backgrounds, gray-100/300 text
+- Consistent across all pages (citizen + admin portals)
+- Accessible color contrast ratios
+
+### stem health events captured
 - Failed operations logged with context
 ```
 
@@ -530,11 +657,53 @@ GET /api/v1/alerts/internal
 GET /api/v1/alerts/history/{city}
 ```
 
-### Citizen Interaction
+### 🌟 NEW: AI Intelligence
 ```
-POST /api/v1/citizen/data-request
-POST /api/v1/citizen/update-request
-GET  /api/v1/citizen/request-status/{id}
+POST /api/v1/ai/query
+GET  /api/v1/ai/query-logs
+```
+
+**Example AI Query:**
+```bash
+curl -X POST http://localhost:8001/api/v1/ai/query \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "query": "What is the air quality in Ahmedabad today?",
+    "city_id": "uuid-of-ahmedabad"
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "response": "The air quality in Ahmedabad is currently Unhealthy for Sensitive Groups with an AQI of 150 and PM2.5 at 85 µg/m³. Sensitive groups should consider reducing prolonged outdoor activities.",
+  "intent": "AIR",
+  "is_valid_domain": true,
+  "confidence": 0.9,
+  "data_sources": ["Environment"],
+  "response_time_ms": 1250,
+  "city_name": "Ahmedabad"
+}
+```
+
+### 🌟 NEW: Authentication
+```
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/auth/me
+POST /api/v1/auth/change-password
+```
+
+### 🌟 NEW: Citizen Participation
+```
+POST /api/v1/citizen/dataset-requests
+GET  /api/v1/citizen/dataset-requests (admin only)
+PUT  /api/v1/citizen/dataset-requests/{id} (admin only)
+POST /api/v1/citizen/correction-requests
+GET  /api/v1/citizen/correction-requests (admin only)
+PUT  /api/v1/citizen/correction-requests/{id} (admin only)
 ```
 
 ### System Trust
@@ -544,9 +713,101 @@ GET /api/v1/system/freshness
 GET /api/v1/system/audit/{city}
 ```
 
-**Interactive API Documentation:** `http://localhost:8000/docs`
+**Interactive API Documentation:** `http://localhost:8001/docs`
 
 Full API documentation: [docs/API.md](docs/API.md)
+
+---
+
+## 🎨 User Interface Features
+
+### Citizen Portal (`/citizen/dashboard`)
+- **Live City Dashboard** with 4 metric cards (Status, AQI, Temperature, Traffic)
+- **AI Chat Panel** - Collapsible natural language query interface with:
+  - City selector dropdown
+  - Chat history with user queries and AI responses
+  - Intent badges (🌫️ AIR, 🚗 TRAFFIC, ⚠️ ALERT, ⚡ RISK)
+  - Confidence indicators (High/Medium/Low)
+  - Data source attribution
+  - Dark mode support
+- **Active Alerts Feed** - Real-time alerts with severity indicators
+- **Public Advisory Cards** - Air quality, temperature, traffic status
+- **Citizen Actions** - Quick links to report issues, request data, view alerts, simulator
+- **Data Freshness Indicators** - Live ingest status per data type
+- **AI Transparency** - Model confidence: 90%
+- **Real-time WebSocket Updates** - Live data refresh every 30 seconds
+
+### Municipal Admin Panel (`/municipal`)
+Protected routes requiring admin authentication:
+- **Dashboard** (`/municipal/dashboard`) - System overview, metrics, health
+- **Scenario Testing** (`/municipal/scenario`) - What-if policy simulator
+- **SAI-Assisted**: Natural language queries for citizen accessibility
+3. **Explainable**: Every prediction includes reasoning and confidence scores
+4. **Trustworthy**: Data freshness and system health always visible
+5. **Decision-Focused**: What-if scenarios drive action
+6. **Citizen-Centered**: Public transparency, participation, and data access
+7. **Secure by Default**: JWT authentication, role-based access control
+8. **Accessible**: Dark mode, responsive design, clear UI/UX
+
+---
+
+## 🔒 Trust Pillars
+
+- **Data Freshness**: Explicit staleness tracking with visual indicators
+- **Fault Tolerance**: Graceful degradation when data sources fail
+- **Explainability**: No black-box predictions - all AI responses grounded in data
+- **No Silent Failures**: System alerts for data delays and errors
+- **Audit Trail**: Complete logging of all AI queries and admin actions
+- **Citizen Participation**: Transparent data correction and access request workflows
+- **AI Safety**: Domain validation prevents misuse and hallucinations
+
+---
+
+## 🌟 NEW Features Summary
+
+### AI Intelligence
+- ✅ Natural language query system with GROQ (Llama 3.1 70B)
+- ✅ Domain validation (air quality, traffic, alerts only)
+- ✅ Intent detection and confidence scoring
+- ✅ Audit logging for all queries
+- ✅ Dark mode chat interface
+
+### Authentication & Authorization
+- ✅ JWT-based authentication
+- ✅ Role-based access control (admin/citizen)
+- ✅ Protected routes with auto-redirect
+- ✅ Password hashing with bcrypt
+- ✅ 24-hour session persistence
+
+### Citizen Engagement
+- ✅ Data correction request workflow
+- ✅ Dataset access request system
+- ✅ Admin review dashboard
+- ✅ Status tracking and notifications
+- ✅ Supporting evidence upload
+
+### UI/UX Enhancements
+- ✅ System-wide dark mode with persistence
+- ✅ Responsive design across all pages
+- ✅ Real-time WebSocket updates
+- ✅ Toast notifications for user actions
+- ✅ Loading states and error handling
+- ✅ Collapsible sections and modals
+
+### Admin Tools
+- ✅ Unified request management dashboard
+- ✅ Two-tab interface (datasets & corrections)
+- ✅ Filter and search capabilities
+- ✅ Click-to-expand details modal
+- ✅ Status update workflow
+- ✅ Reviewer trackingauthenticated
+- **Role-Based Access** - Admin-only routes blocked for citizens
+
+### Dark Mode
+- Toggle in header (top-right)
+- Persists across sessions
+- Smooth transitions
+- Optimized for readability in both modes
 
 ---
 
@@ -593,8 +854,68 @@ Full API documentation: [docs/API.md](docs/API.md)
 ❌ Complex ML training pipelines  
 ❌ Vehicle-level traffic simulation  
 ❌ Heavy GIS/road-network modeling  
-❌ Mobile applications  
-❌ Production-grade authentication (for hackathon scope)
+❌ Mobile applications (web-responsive instead)  
+❌ Real-time video processing  
+❌ Blockchain integration  
+❌ Multi-language support (English only)
+
+---
+
+## 🚀 Getting Started
+
+Check if both services are running:
+- **Backend**: http://localhost:8001/health
+- **Frontend**: http://localhost:3001 (or 3000)
+- **API Docs**: http://localhost:8001/docs
+
+**Test Accounts:**
+```
+Admin:
+Email: admin@ingenious.com
+Password: admin123
+
+Citizen:
+Email: citizen@ingenious.com  
+Password: citizen123
+```
+
+**Try the AI System:**
+1. Go to http://localhost:3001/citizen/dashboard
+2. Scroll down to "Ask AI About Your City"
+3. Click to expand the chat panel
+4. Ask: "What's the air quality today?"
+5. Get instant AI-powered response with data sources!
+
+---
+
+## 📝 Project Status
+
+### ✅ Completed Features
+- Core data ingestion (push + pull)
+- 7-day forecasting
+- Anomaly detection
+- Risk scoring
+- What-if scenario engine
+- Alert system
+- System health monitoring
+- JWT authentication
+- Role-based access control
+- Dark mode theme system
+- AI natural language query system
+- Citizen participation workflows
+- Admin request management dashboard
+- Real-time WebSocket updates
+- Responsive design
+
+### 🚧 Future Enhancements
+- Admin AI (scenario policy recommendations)
+- Email notifications for requests
+- Data visualization improvements
+- Mobile-responsive optimizations
+- Multi-city comparisons
+- Historical trend analysis
+- API rate limiting
+- Advanced audit dashboards
 
 ---
 

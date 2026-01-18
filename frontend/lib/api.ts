@@ -354,6 +354,31 @@ export const api = {
     if (!response.ok) throw new Error('Failed to update correction request');
     return response.json();
   },
+
+  // ========================================
+  // AI APIs (Citizen Query & Admin Decision Intelligence)
+  // ========================================
+  async sendAIQuery(query: string, cityId: string) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/ai/query`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ query, city_id: cityId }),
+    });
+    if (!response.ok) throw new Error('Failed to send AI query');
+    return response.json();
+  },
+
+  async getAIQueryLogs(limit: number = 50, queryType?: string) {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (queryType) params.append('query_type', queryType);
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/ai/query-logs?${params}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch query logs');
+    return response.json();
+  },
 };
 
 // ========================================

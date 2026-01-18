@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     OPENWEATHER_API_KEY: str = ""
     AQICN_API_KEY: str = ""  # Optional, some endpoints are free
     
+    # AI/LLM APIs
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"  # Updated model (3.1 was decommissioned)
+    
     # Forecasting
     FORECAST_DAYS: int = 7
     

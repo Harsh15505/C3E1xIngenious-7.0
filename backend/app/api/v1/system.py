@@ -21,6 +21,7 @@ async def get_system_metadata():
     return {
         "cities": [
             {
+                "id": str(c.id),
                 "name": c.name,
                 "state": c.state,
                 "population": c.population
