@@ -184,8 +184,8 @@ async def calculate_risk_score(city: str) -> Dict[str, Any]:
             'data_freshness': {}
         }
     
-    # Fetch latest data (within last 2 hours)
-    cutoff_time = datetime.now(timezone.utc) - timedelta(hours=2)
+    # Fetch latest data (within last 24 hours)
+    cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
     
     env = await EnvironmentData.filter(
         city=city_obj,
@@ -243,12 +243,26 @@ async def calculate_risk_score(city: str) -> Dict[str, Any]:
     service_explanation = ""
     
     if services:
-        # Service risk based on failure rates
-        failure_rates = [s.failure_rate for s in services]
-        avg_failure = np.mean(failure_rates)
-        service_score = avg_failure / 100  # Already 0-100 percentage
-        service_confidence = 0.8
-        service_explanation = f"Avg failure rate: {avg_failure:.1f}% across {len(services)} services"
+        # Service risk based on water supply stress and power outages
+        # ServiceData fields: water_supply_stress (0-1), waste_collection_eff (0-1), power_outage_count
+        water_stress = [s.water_supply_stress for s in services if s.water_supply_stress is not None]
+        waste_eff = [s.waste_collection_eff for s in services if s.waste_collection_eff is not None]
+        power_outages = [s.power_outage_count for s in services if s.power_outage_count is not None]
+        
+        risk_components = []
+        if water_stress:
+            risk_components.append(np.mean(water_stress))  # Already 0-1
+        if waste_eff:
+            risk_components.append(1.0 - np.mean(waste_eff))  # Invert: low efficiency = high risk
+        if power_outages:
+            risk_components.append(min(1.0, np.mean(power_outages) / 10))  # 10+ outages = max risk
+        
+        if risk_components:
+            service_score = np.mean(risk_components)
+            service_confidence = 0.8
+            service_explanation = f"Service risk: {service_score:.2f} from {len(services)} service readings"
+        else:
+            service_explanation = "No valid service metrics"
     else:
         service_explanation = "No recent service data"
     
@@ -265,7 +279,7 @@ async def calculate_risk_score(city: str) -> Dict[str, Any]:
     overall_confidence = np.mean(confidences) if confidences else 0.0
     
     explanation = (
-        f"Risk calculated from current conditions in {city}: "
+        f"Risk calculated from recent conditions in {city} (last 24h): "
         f"Environment (40%): {env_explanation}. "
         f"Traffic (35%): {traffic_explanation}. "
         f"Services (25%): {service_explanation}. "

@@ -213,6 +213,7 @@ async def fetch_and_store_weather(city_name: str, lat: float, lon: float) -> boo
             return False
         
         # Store environment data (schema-aligned)
+        # Always mark real API data with source='openweathermap'
         await EnvironmentData.create(
             city=city,
             timestamp=datetime.now(timezone.utc),
@@ -220,12 +221,12 @@ async def fetch_and_store_weather(city_name: str, lat: float, lon: float) -> boo
             aqi=data['aqi'],
             pm25=data.get('pm25', 35.0),
             rainfall=0.0,  # Not available from OpenWeatherMap basic plan
-            source='openweathermap',
+            source='openweathermap',  # Real API data identifier
             is_fresh=True,
-            is_validated=False
+            is_validated=True  # API data is pre-validated
         )
         
-        logger.info(f"✓ Stored weather data for {city_name}: Temp={data['temperature']}°C, AQI={data['aqi']}")
+        logger.info(f"✓ Stored REAL weather data for {city_name}: Temp={data['temperature']}°C, AQI={data['aqi']}")
         return True
     
     except Exception as e:

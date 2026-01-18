@@ -51,7 +51,12 @@ async def get_alerts(
             query["is_active"] = True
         
         if audience:
-            query["audience"] = audience
+            if audience == "public":
+                query["audience__in"] = ["public", "both"]
+            elif audience == "internal":
+                query["audience__in"] = ["internal", "both"]
+            else:
+                query["audience"] = audience
         
         if severity:
             query["severity"] = severity

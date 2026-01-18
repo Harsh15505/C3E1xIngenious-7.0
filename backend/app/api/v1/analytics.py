@@ -208,14 +208,14 @@ async def get_traffic_data(
     Returns latest traffic congestion for all zones
     """
     from app.models import TrafficData
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     
     city_obj = await City.filter(name__iexact=city).first()
     if not city_obj:
         raise HTTPException(status_code=404, detail=f"City '{city}' not found")
     
-    # Get latest traffic data (within last 2 hours)
-    cutoff = datetime.now() - timedelta(hours=2)
+    # Get latest traffic data (within last 2 hours, UTC-aware)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=2)
     data = await TrafficData.filter(
         city=city_obj,
         timestamp__gte=cutoff

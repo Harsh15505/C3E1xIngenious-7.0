@@ -104,10 +104,19 @@ class ScenarioEngine:
         traffic_change = scenario_input.get("trafficDensityChange", 0)
         heavy_restriction = scenario_input.get("heavyVehicleRestriction", False)
         time_window = scenario_input.get("timeWindow", "08:00-11:00")
+        temperature_change = scenario_input.get("temperatureChange", 0) or 0
+        manual_aqi_change = scenario_input.get("aqiChange", 0) or 0
+        service_degradation = scenario_input.get("serviceDegradation", 0) or 0
+        traffic_multiplier = scenario_input.get("trafficMultiplier")
+
+        # If traffic multiplier is provided, translate it to percentage change so sliders affect simulation
+        if traffic_multiplier is not None:
+            traffic_change = (traffic_multiplier - 1.0) * 100
         
         # Fetch baseline data if not provided
         baseline_aqi = scenario_input.get("baselineAQI")
         baseline_density = scenario_input.get("baselineTrafficDensity")
+        baseline_temp = scenario_input.get("baselineTemperature")
         
         if baseline_aqi is None or baseline_density is None:
             city = await City.filter(name__iexact=city_name).first()
@@ -116,6 +125,7 @@ class ScenarioEngine:
                 latest_env = await EnvironmentData.filter(city=city).order_by('-timestamp').first()
                 if latest_env:
                     baseline_aqi = latest_env.aqi or 100
+                    baseline_temp = getattr(latest_env, "temperature", None) or baseline_temp
                 
                 # Get latest traffic data for zone
                 latest_traffic = await TrafficData.filter(city=city, zone=zone).order_by('-timestamp').first()
@@ -125,6 +135,7 @@ class ScenarioEngine:
         # Default baselines if still not available
         baseline_aqi = baseline_aqi or 100
         baseline_density = baseline_density or 60
+        baseline_temp = baseline_temp if baseline_temp is not None else 32.0
         
         # Analyze time window for peak hour effects
         time_analysis = ScenarioEngine._analyze_time_window(time_window)
@@ -147,24 +158,25 @@ class ScenarioEngine:
         impacts = []
         
         # IMPACT 1: Air Quality (AQI/PM2.5)
-        if traffic_change != 0:
+        if traffic_change != 0 or manual_aqi_change != 0:
             # Apply time window multiplier - peak hours have bigger impact
-            aqi_change = traffic_change * ScenarioEngine.TRAFFIC_AQI_COEFFICIENT * peak_multiplier
+            aqi_change_from_traffic = traffic_change * ScenarioEngine.TRAFFIC_AQI_COEFFICIENT * peak_multiplier
+            combined_aqi_change = aqi_change_from_traffic + manual_aqi_change
             
             if heavy_restriction:
                 # Heavy vehicle ban amplifies AQI improvement
-                aqi_change *= ScenarioEngine.HEAVY_VEHICLE_PM25_IMPACT
+                combined_aqi_change *= ScenarioEngine.HEAVY_VEHICLE_PM25_IMPACT
             
-            predicted_aqi = baseline_aqi * (1 + aqi_change / 100)
+            predicted_aqi = baseline_aqi * (1 + combined_aqi_change / 100)
             
             impacts.append({
                 "metric": "Air Quality Index (AQI)",
                 "baseline": round(baseline_aqi, 1),
                 "predicted": round(predicted_aqi, 1),
-                "change_percent": round(aqi_change, 1),
-                "direction": "decrease" if aqi_change < 0 else "increase",
+                "change_percent": round(combined_aqi_change, 1),
+                "direction": "decrease" if combined_aqi_change < 0 else "increase",
                 "confidence": 0.78,
-                "explanation": f"Traffic-AQI correlation coefficient: {ScenarioEngine.TRAFFIC_AQI_COEFFICIENT}. "
+                "explanation": f"Traffic-AQI coefficient: {ScenarioEngine.TRAFFIC_AQI_COEFFICIENT}; manual AQI adjustment: {manual_aqi_change}%. "
                               f"Time window: {time_window} ({period_type}, multiplier: {peak_multiplier}x). "
                               f"{'Heavy vehicle restriction amplifies impact by {:.0%}.'.format(ScenarioEngine.HEAVY_VEHICLE_PM25_IMPACT - 1) if heavy_restriction else ''}"
             })
@@ -217,6 +229,20 @@ class ScenarioEngine:
                 "confidence": 0.75,
                 "explanation": "Heavy vehicles cause 90% of road damage despite being <10% of traffic. "
                               f"Restriction in Zone {zone} ({zone_info['congestion_level']} density area) significantly reduces maintenance costs."
+            })
+
+        # IMPACT 2d: Heat Stress & Temperature (independent slider)
+        if temperature_change != 0:
+            predicted_temp = baseline_temp + temperature_change
+            heat_stress_change = temperature_change * 1.8  # scale factor to show amplified impact on heat stress risk
+            impacts.append({
+                "metric": "Heat Stress Risk",
+                "baseline": f"{round(baseline_temp, 1)}°C typical",
+                "predicted": f"{round(predicted_temp, 1)}°C (heat stress {('+' if heat_stress_change > 0 else '')}{round(heat_stress_change, 1)}%)",
+                "change_percent": round(heat_stress_change, 1),
+                "direction": "increase" if heat_stress_change > 0 else "decrease",
+                "confidence": 0.7,
+                "explanation": f"Temperature change directly affects outdoor heat risk. Slider input of {temperature_change:+.1f}°C applied on top of live city baseline."
             })
         
         # IMPACT 3: Traffic Congestion & Travel Time
@@ -301,6 +327,19 @@ class ScenarioEngine:
                 "explanation": f"Increased congestion reduces fuel efficiency. "
                               f"During {period_type} hours in Zone {zone}, impact on fuel consumption is {'amplified' if peak_multiplier > 1 else 'moderate'}."
             })
+
+        # IMPACT 7: Service Reliability (independent slider)
+        if service_degradation:
+            service_outage_risk = service_degradation * 0.9  # scale to show reliability hit
+            impacts.append({
+                "metric": "Service Reliability",
+                "baseline": "Normal operations",
+                "predicted": f"{round(service_outage_risk, 1)}% higher outage probability",
+                "change_percent": round(service_outage_risk, 1),
+                "direction": "increase",
+                "confidence": 0.69,
+                "explanation": f"Service degradation slider maps directly to reliability loss. Applied factor accounts for cascading effects across utilities."
+            })
         
         # Calculate overall confidence (weighted average)
         if impacts:
@@ -334,7 +373,12 @@ class ScenarioEngine:
                     "heavyVehicleRestriction": heavy_restriction,
                     "timeWindow": time_window,
                     "baselineAQI": baseline_aqi,
-                    "baselineTrafficDensity": baseline_density
+                    "baselineTrafficDensity": baseline_density,
+                    "temperatureChange": temperature_change,
+                    "aqiChange": manual_aqi_change,
+                    "serviceDegradation": service_degradation,
+                    "trafficMultiplier": traffic_multiplier,
+                    "baselineTemperature": baseline_temp
                 },
                 outputs={
                     "impacts": impacts,
@@ -354,7 +398,11 @@ class ScenarioEngine:
             "time_window": time_window,
             "inputs": {
                 "traffic_density_change": traffic_change,
-                "heavy_vehicle_restriction": heavy_restriction
+                "heavy_vehicle_restriction": heavy_restriction,
+                "traffic_multiplier": traffic_multiplier,
+                "temperature_change": temperature_change,
+                "aqi_change": manual_aqi_change,
+                "service_degradation": service_degradation
             },
             "impacts": impacts,
             "overall_confidence": round(overall_confidence, 3),

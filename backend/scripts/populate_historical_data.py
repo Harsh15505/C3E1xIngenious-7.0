@@ -1,12 +1,24 @@
 """
 Historical Data Population Script
-Generates 2 months of realistic synthesized data for analytics and charts
+Generates 60 days of realistic synthesized data for analytics and charts
 """
 
 import asyncio
 from datetime import datetime, timedelta
 import random
 import math
+import sys
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Add parent directory to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Load .env from backend directory
+backend_dir = Path(__file__).parent.parent
+load_dotenv(backend_dir / '.env')
+
 from tortoise import Tortoise
 from app.models import EnvironmentData, TrafficData, ServiceData, City
 from app.config import get_settings
@@ -177,32 +189,21 @@ async def populate_historical_data():
         cities_map[city_name] = city
         print(f"✅ City: {city_name} ({coords['state']})")
     
-    # Check what data already exists
-    existing_data = await EnvironmentData.all().order_by('-timestamp').limit(1)
+    # Delete existing synthetic data and start fresh
+    print("\n🗑️  Clearing existing synthetic data...")
+    deleted_env = await EnvironmentData.filter(source='historical_synthetic').delete()
+    deleted_traffic = await TrafficData.filter(source='historical_synthetic').delete()
+    deleted_service = await ServiceData.filter(source='historical_synthetic').delete()
+    print(f"   Deleted {deleted_env} environment, {deleted_traffic} traffic, {deleted_service} service records")
     
-    if existing_data:
-        latest_timestamp = existing_data[0].timestamp
-        start_date = latest_timestamp + timedelta(hours=1)  # Continue from next hour
-        
-        # Get the earliest data to calculate original start
-        earliest_data = await EnvironmentData.all().order_by('timestamp').limit(1)
-        original_start = earliest_data[0].timestamp
-        end_date = original_start + timedelta(days=15)  # 15 days from original start
-        
-        # Make timezone-aware if needed
-        if latest_timestamp.tzinfo is not None:
-            from datetime import timezone
-            if end_date.tzinfo is None:
-                end_date = end_date.replace(tzinfo=timezone.utc)
-        
-        print(f"\n📋 Found existing data from: {original_start}")
-        print(f"📋 Latest data: {latest_timestamp}")
-        print(f"📋 Continuing from: {start_date}")
-        print(f"📋 Target end date: {end_date}")
-    else:
-        # Generate data for last 15 days
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=15)
+    # Generate fresh 60 days of data
+    from datetime import timezone
+    end_date = datetime.now(timezone.utc)
+    start_date = end_date - timedelta(days=60)
+    
+    print(f"\n📋 Generating fresh 60 days of dense hourly data")
+    print(f"   Start: {start_date}")
+    print(f"   End: {end_date}")
     
     print(f"\n📅 Generating data from {start_date.date()} to {end_date.date()}")
     print("=" * 60)
@@ -218,36 +219,35 @@ async def populate_historical_data():
             # Environment Data
             temp = generate_realistic_temperature(city_name, current_date, hour)
             aqi = generate_realistic_aqi(city_name, current_date, hour)
-            humidity = random.randint(40, 85)
-            wind_speed = round(random.uniform(5, 25), 1)
             
             await EnvironmentData.create(
                 city=city,
                 timestamp=current_date,
                 temperature=temp,
                 aqi=aqi,
-                humidity=humidity,
-                wind_speed=wind_speed,
-                precipitation=round(random.uniform(0, 5), 1) if random.random() < 0.1 else 0.0,
-                source='historical_synthetic',
-                metadata={
-                    'synthetic': True,
-                    'patterns': 'realistic_daily_seasonal'
-                }
+                pm25=round(aqi * 0.6, 1),  # PM2.5 correlates with AQI
+                rainfall=round(random.uniform(0, 5), 1) if random.random() < 0.1 else 0.0,
+                source='historical_synthetic'
             )
             
             # Traffic Data (for major zones)
             for zone in ['central', 'north', 'south', 'east', 'west']:
                 congestion = generate_traffic_congestion(city_name, current_date, hour, zone)
                 
+                # Convert congestion level to string category
+                if congestion < 0.3:
+                    congestion_level_str = 'low'
+                elif congestion < 0.7:
+                    congestion_level_str = 'medium'
+                else:
+                    congestion_level_str = 'high'
+                
                 await TrafficData.create(
                     city=city,
                     timestamp=current_date,
-                    zone=zone,
+                    zone=zone.upper()[0],  # Use A, B, C, D, E for zones
                     density_percent=round(congestion * 100, 1),  # Convert to percentage
-                    congestion_level=congestion,
-                    avg_speed=round(random.uniform(15, 50) * (1 - congestion), 1),
-                    incident_count=random.choices([0, 1, 2, 3], weights=[0.7, 0.2, 0.08, 0.02])[0],
+                    congestion_level=congestion_level_str,
                     source='historical_synthetic'
                 )
             
@@ -256,34 +256,13 @@ async def populate_historical_data():
                 await ServiceData.create(
                     city=city,
                     timestamp=current_date,
-                    service_type='water',
-                    status='operational' if random.random() > 0.05 else 'degraded',
-                    availability=round(random.uniform(0.85, 0.99), 2),
-                    complaints=random.randint(0, 15),
-                    source='historical_synthetic'
-                )
-                
-                await ServiceData.create(
-                    city=city,
-                    timestamp=current_date,
-                    service_type='power',
-                    status='operational' if random.random() > 0.03 else 'degraded',
-                    availability=round(random.uniform(0.92, 0.99), 2),
-                    complaints=random.randint(0, 10),
-                    source='historical_synthetic'
-                )
-                
-                await ServiceData.create(
-                    city=city,
-                    timestamp=current_date,
-                    service_type='waste',
-                    status='operational' if random.random() > 0.08 else 'delayed',
-                    availability=round(random.uniform(0.80, 0.95), 2),
-                    complaints=random.randint(0, 25),
+                    water_supply_stress=round(random.uniform(0.15, 0.65), 2),
+                    waste_collection_eff=round(random.uniform(0.75, 0.95), 2),
+                    power_outage_count=random.randint(0, 5),
                     source='historical_synthetic'
                 )
             
-            total_records += 7  # 1 env + 5 traffic + (3 services if noon)
+            total_records += 6  # 1 env + 5 traffic + (1 service if noon)
         
         # Small delay every 24 hours to prevent connection pool exhaustion
         if current_date.hour == 23:
