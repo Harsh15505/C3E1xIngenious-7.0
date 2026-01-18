@@ -141,17 +141,19 @@ export default function ScenarioPage() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-6 h-[calc(100vh-12rem)]">
             {/* Input Panel */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-                <svg className="w-5 h-5 text-red-500 dark:text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                </svg>
-                Scenario Parameters
-              </h2>
-
-              {/* City Selector */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                  <svg className="w-5 h-5 text-red-500 dark:text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                  </svg>
+                  Simulation Parameters
+                </h2>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6">{/* City Selector */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   Select City
@@ -311,18 +313,21 @@ export default function ScenarioPage() {
                   <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                 </div>
               )}
+              </div>
             </div>
 
             {/* Results Panel */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-                <svg className="w-5 h-5 text-red-500 dark:text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                </svg>
-                Simulation Results
-              </h2>
-
-              {!simulationResult ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                  <svg className="w-5 h-5 text-red-500 dark:text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                  </svg>
+                  Simulation Results
+                </h2>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6">{!simulationResult ? (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                   <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -403,26 +408,28 @@ export default function ScenarioPage() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           </div>
 
           {/* AI Recommendations Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center">
-                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI Recommendations</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md mt-8 flex flex-col h-[600px]">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <svg className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI Recommendations</h2>
+                </div>
               </div>
-            </div>
+              
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                Get AI-powered recommendations based on current city conditions and historical patterns.
+              </p>
 
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              Get AI-powered recommendations based on current city conditions and historical patterns.
-            </p>
-
-            {/* Scenario Type Buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {/* Scenario Type Buttons */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
               <button
                 onClick={() => fetchAIRecommendations('traffic')}
                 disabled={loadingRecommendations}
@@ -464,7 +471,10 @@ export default function ScenarioPage() {
                 General
               </button>
             </div>
+            </div>
 
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto p-6">
             {/* Loading State */}
             {loadingRecommendations && (
               <div className="flex items-center justify-center py-8">
@@ -557,6 +567,7 @@ export default function ScenarioPage() {
                 )}
               </div>
             )}
+            </div>
           </div>
 
           {/* Info Section */}

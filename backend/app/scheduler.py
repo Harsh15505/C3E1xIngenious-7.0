@@ -195,6 +195,53 @@ async def generate_alerts_job():
         logger.error(f"Alert generation job failed: {e}")
 
 
+async def expire_scheduled_alerts_job():
+    """Auto-expire alerts that have passed their end_date (every 10 min)"""
+    logger.info(f"[CRON] Checking for expired/scheduled alerts at {datetime.utcnow()}")
+    
+    try:
+        from app.models import Alert
+        from datetime import timezone
+        
+        # Find active alerts with end_date in the past
+        now = datetime.now(timezone.utc)
+        alerts = await Alert.filter(is_active=True).all()
+        
+        expired_count = 0
+        activated_count = 0
+        
+        for alert in alerts:
+            metadata = alert.metadata or {}
+            
+            # Check if alert should be expired
+            end_date_str = metadata.get('end_date')
+            if end_date_str:
+                from datetime import datetime as dt
+                end_date = dt.fromisoformat(end_date_str.replace('Z', '+00:00'))
+                if end_date <= now:
+                    alert.is_active = False
+                    alert.resolved_at = now
+                    await alert.save()
+                    expired_count += 1
+            
+            # Check if scheduled alert should become active
+            start_date_str = metadata.get('start_date')
+            if start_date_str and not alert.is_active and metadata.get('scheduled'):
+                start_date = dt.fromisoformat(start_date_str.replace('Z', '+00:00'))
+                if start_date <= now:
+                    alert.is_active = True
+                    metadata['scheduled'] = False
+                    alert.metadata = metadata
+                    await alert.save()
+                    activated_count += 1
+        
+        if expired_count > 0 or activated_count > 0:
+            logger.info(f"✅ Alert expiry/activation: {expired_count} expired, {activated_count} activated")
+        
+    except Exception as e:
+        logger.error(f"Alert expiry job failed: {e}")
+
+
 # ========================================
 # SYSTEM HEALTH JOBS
 # ========================================
@@ -279,6 +326,14 @@ def setup_jobs():
         CronTrigger(minute="*/30"),  # Every 30 minutes
         id="alert_generation",
         name="Generate Alerts",
+        replace_existing=True
+    )
+    
+    scheduler.add_job(
+        expire_scheduled_alerts_job,
+        CronTrigger(minute="*/10"),  # Every 10 minutes
+        id="alert_expiry",
+        name="Expire Scheduled Alerts",
         replace_existing=True
     )
     

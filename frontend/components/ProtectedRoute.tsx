@@ -16,13 +16,15 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
   useEffect(() => {
     // Check authentication
     if (!authUtils.isAuthenticated()) {
-      router.push('/login');
+      // Redirect to appropriate login page
+      const loginPage = requireAdmin ? '/admin/login' : '/login';
+      router.push(loginPage);
       return;
     }
 
     // Check admin requirement
     if (requireAdmin && !authUtils.isAdmin()) {
-      router.push('/unauthorized');
+      router.push('/admin/login');
       return;
     }
 

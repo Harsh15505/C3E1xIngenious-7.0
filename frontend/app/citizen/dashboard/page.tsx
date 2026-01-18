@@ -55,6 +55,7 @@ const trafficDescriptor = (avg: number | null) => {
 
 export default function CitizenDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [totalActiveAlerts, setTotalActiveAlerts] = useState(0);
   const [cityHealth, setCityHealth] = useState<CityHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -188,6 +189,7 @@ export default function CitizenDashboard() {
         category: a.type
       }));
       setAlerts(alertsList);
+      setTotalActiveAlerts(alertsData?.active_alerts || alertsList.length);
 
       const riskScore = risk?.risk_score ?? 0;
       setCityHealth({
@@ -365,7 +367,7 @@ export default function CitizenDashboard() {
                   </svg>
                 </div>
               </div>
-              <p className="text-2xl font-bold text-red-500">{alerts.length}</p>
+              <p className="text-2xl font-bold text-red-500">{totalActiveAlerts}</p>
               <button
                 onClick={() => window.location.assign('/citizen/alerts')}
                 className="text-sm text-red-600 font-medium hover:underline"

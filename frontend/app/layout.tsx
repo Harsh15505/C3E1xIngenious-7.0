@@ -6,6 +6,9 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 export const metadata: Metadata = {
   title: 'Urban Intelligence Platform',
   description: 'Early risk prediction and decision support for urban systems',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({

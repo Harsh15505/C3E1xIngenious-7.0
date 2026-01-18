@@ -7,6 +7,24 @@ import { authUtils } from './auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001';
 
+// Simple in-memory cache
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 30000; // 30 seconds
+
+// Helper to check cache
+const getCachedData = (key: string) => {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+};
+
+// Helper to set cache
+const setCachedData = (key: string, data: any) => {
+  cache.set(key, { data, timestamp: Date.now() });
+};
+
 // Helper to add auth headers
 const getAuthHeaders = (): HeadersInit => {
   const token = authUtils.getToken();
@@ -210,6 +228,27 @@ export const api = {
     return response.json();
   },
 
+  async createManualAlert(data: {
+    city: string;
+    title: string;
+    message: string;
+    severity: 'info' | 'warning' | 'critical';
+    audience?: 'public' | 'internal' | 'both';
+    start_date?: string;
+    end_date?: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/alerts/create`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || errorData.detail || 'Failed to create alert');
+    }
+    return response.json();
+  },
+
   // ========================================
   // INGESTION APIs (Phase 2)
   // ========================================
@@ -245,21 +284,33 @@ export const api = {
 
   // Chart data endpoints
   async getEnvironmentHistory(city: string, hours: number = 24) {
+    const cacheKey = `env-${city}-${hours}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+    
     const response = await fetch(
       `${API_BASE_URL}/api/v1/analytics/cities/${city}/environment-data?limit=${hours}`,
       { headers: getAuthHeaders() }
     );
     if (!response.ok) throw new Error('Failed to fetch environment history');
-    return response.json();
+    const data = await response.json();
+    setCachedData(cacheKey, data);
+    return data;
   },
 
   async getTrafficData(city: string) {
+    const cacheKey = `traffic-${city}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+    
     const response = await fetch(
       `${API_BASE_URL}/api/v1/analytics/cities/${city}/traffic-data`,
       { headers: getAuthHeaders() }
     );
     if (!response.ok) throw new Error('Failed to fetch traffic data');
-    return response.json();
+    const data = await response.json();
+    setCachedData(cacheKey, data);
+    return data;
   },
 
   async getAuditLogs() {

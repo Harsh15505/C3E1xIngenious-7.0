@@ -3,19 +3,22 @@ Alerts API Endpoints
 Manages alert generation, retrieval, and acknowledgment
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
-from app.models import City, Alert
+from app.models import City, Alert, User
 from app.schemas.alerts import (
     AlertResponse, 
     AlertListResponse, 
     AlertGenerationResponse,
-    AlertAcknowledge
+    AlertAcknowledge,
+    CreateManualAlertRequest,
+    CreateManualAlertResponse
 )
 from app.modules.alerts.generator import AlertGenerator
+from app.modules.auth.middleware import get_current_admin
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 logger = logging.getLogger(__name__)
@@ -103,6 +106,93 @@ async def get_alerts(
     except Exception as e:
         logger.error(f"Error retrieving alerts for {city}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve alerts: {str(e)}")
+
+
+@router.post("/create", response_model=CreateManualAlertResponse)
+async def create_manual_alert(
+    request: CreateManualAlertRequest,
+    current_admin: User = Depends(get_current_admin)
+):
+    """
+    Create manual public announcement/advisory (Admin only).
+    
+    Supports:
+    - Geo-targeting (specific city or all cities)
+    - Scheduling (start/end dates)
+    - Multiple severity levels
+    - Audience targeting (public/internal/both)
+    
+    Examples:
+    - Infrastructure: "Main Street Bridge under maintenance Jan 20-25"
+    - Traffic: "VIP route reserved on Republic Day"
+    - Events: "City Marathon - expect delays"
+    - Emergency: "Evacuation advisory for flood zone"
+    """
+    try:
+        # Validate dates
+        if request.start_date and request.end_date:
+            if request.end_date <= request.start_date:
+                raise HTTPException(status_code=400, detail="End date must be after start date")
+        
+        # Determine target cities
+        if request.city.lower() == "all":
+            cities = await City.all()
+            if not cities:
+                raise HTTPException(status_code=404, detail="No cities found")
+        else:
+            city = await City.filter(name__iexact=request.city).first()
+            if not city:
+                raise HTTPException(status_code=404, detail=f"City '{request.city}' not found")
+            cities = [city]
+        
+        # Create alerts for each target city
+        alert_ids = []
+        now_utc = datetime.now(timezone.utc)
+        
+        for city in cities:
+            # Determine if alert should be active now
+            is_active = True
+            scheduled = False
+            
+            if request.start_date:
+                # Make sure start_date is timezone-aware
+                start_date_aware = request.start_date if request.start_date.tzinfo else request.start_date.replace(tzinfo=timezone.utc)
+                is_active = start_date_aware <= now_utc
+                scheduled = start_date_aware > now_utc
+            
+            alert = await Alert.create(
+                city=city,
+                type="announcement",  # New type for manual announcements
+                severity=request.severity,
+                audience=request.audience,
+                title=request.title,
+                message=request.message,
+                is_active=is_active,
+                metadata={
+                    "source": "manual",
+                    "created_by": current_admin.email,
+                    "created_by_id": str(current_admin.id),
+                    "start_date": request.start_date.isoformat() if request.start_date else None,
+                    "end_date": request.end_date.isoformat() if request.end_date else None,
+                    "scheduled": scheduled
+                }
+            )
+            alert_ids.append(str(alert.id))
+        
+        city_names = [c.name for c in cities]
+        
+        return CreateManualAlertResponse(
+            success=True,
+            message=f"Alert created successfully for {len(cities)} {'city' if len(cities) == 1 else 'cities'}",
+            alert_ids=alert_ids,
+            cities_targeted=city_names
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating manual alert: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create alert: {str(e)}")
 
 
 @router.post("/{city}/generate", response_model=AlertGenerationResponse)

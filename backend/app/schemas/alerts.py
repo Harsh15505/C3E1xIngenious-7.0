@@ -50,3 +50,22 @@ class AlertGenerationResponse(BaseModel):
     alerts_created: int
     breakdown: Dict[str, int]
     error: Optional[str] = None
+
+
+class CreateManualAlertRequest(BaseModel):
+    """Schema for creating manual public announcements"""
+    city: str = Field(..., description="City name or 'all' for all cities")
+    title: str = Field(..., min_length=5, max_length=200, description="Alert title")
+    message: str = Field(..., min_length=10, max_length=1000, description="Alert message")
+    severity: str = Field(..., pattern="^(info|warning|critical)$", description="Alert severity")
+    audience: str = Field(default="public", pattern="^(public|internal|both)$", description="Target audience")
+    start_date: Optional[datetime] = Field(None, description="When alert becomes active (defaults to now)")
+    end_date: Optional[datetime] = Field(None, description="When alert expires (optional)")
+
+
+class CreateManualAlertResponse(BaseModel):
+    """Response after creating manual alert"""
+    success: bool
+    message: str
+    alert_ids: list[str]
+    cities_targeted: list[str]

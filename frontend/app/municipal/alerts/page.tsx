@@ -26,8 +26,32 @@ export default function AlertsPage() {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [audienceFilter, setAudienceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    city: 'ahmedabad',
+    title: '',
+    message: '',
+    severity: 'info' as 'info' | 'warning' | 'critical',
+    audience: 'public' as 'public' | 'internal' | 'both',
+    start_date: '',
+    end_date: '',
+  });
 
   const cities = ['Ahmedabad', 'Gandhinagar', 'Vadodara'];
+  
+  // Check auth status
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('urban_intel_token');
+      setIsAdmin(!!token);
+      console.log('Admin logged in:', !!token);
+    }
+  }, []);
 
   useEffect(() => {
     loadAlerts();
@@ -43,6 +67,7 @@ export default function AlertsPage() {
       const allAlerts: Alert[] = [];
       for (const city of cities) {
         const cityAlerts = await api.getAlerts(city.toLowerCase());
+        console.log(`Alerts for ${city}:`, cityAlerts);
         if (cityAlerts?.alerts?.length) {
           allAlerts.push(
             ...cityAlerts.alerts.map((alert: any) => ({
@@ -52,6 +77,7 @@ export default function AlertsPage() {
           );
         }
       }
+      console.log('Total alerts loaded:', allAlerts.length);
       setAlerts(allAlerts);
     } catch (error) {
       console.error('Failed to load alerts:', error);
@@ -91,6 +117,61 @@ export default function AlertsPage() {
       ));
     } catch (error) {
       console.error('Failed to resolve alert:', error);
+    }
+  };
+
+  const handleCreateAlert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      // Debug: Log auth status
+      const token = typeof window !== 'undefined' ? localStorage.getItem('urban_intel_token') : null;
+      console.log('Auth token exists:', !!token);
+      
+      const payload: any = {
+        city: formData.city,
+        title: formData.title,
+        message: formData.message,
+        severity: formData.severity,
+        audience: formData.audience,
+      };
+      
+      // Only add dates if they're provided
+      if (formData.start_date) {
+        payload.start_date = new Date(formData.start_date).toISOString();
+      }
+      if (formData.end_date) {
+        payload.end_date = new Date(formData.end_date).toISOString();
+      }
+      
+      console.log('Creating alert with payload:', payload);
+      const result = await api.createManualAlert(payload);
+      console.log('Alert created successfully:', result);
+      
+      // Reset form and close modal FIRST
+      setFormData({
+        city: 'ahmedabad',
+        title: '',
+        message: '',
+        severity: 'info',
+        audience: 'public',
+        start_date: '',
+        end_date: '',
+      });
+      setShowCreateModal(false);
+      
+      // Refresh alerts list
+      await loadAlerts();
+      
+      // Show success message AFTER refresh
+      alert(`Success! Alert created for ${result.cities_targeted.join(', ')}\n\nThe alert has been added to the list.`);
+    } catch (error: any) {
+      console.error('Failed to create alert:', error);
+      const errorMsg = error.message || 'Failed to create alert';
+      alert(`Error: ${errorMsg}\n\nPlease ensure you're logged in as an admin.`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -142,7 +223,9 @@ export default function AlertsPage() {
                 Create, monitor, and manage city alerts
               </p>
             </div>
-            <button className="bg-red-500 text-white px-6 py-2.5 rounded-md hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-sm font-semibold flex items-center">
+            <button className="bg-red-500 text-white px-6 py-2.5 rounded-md hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-sm font-semibold flex items-center"
+              onClick={() => setShowCreateModal(true)}
+            >
               <span className="mr-2">+</span> Create Alert
             </button>
           </div>
@@ -319,6 +402,223 @@ export default function AlertsPage() {
             </div>
           )}
         </div>
+
+        {/* Create Alert Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create Public Announcement</h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Form */}
+              <form onSubmit={handleCreateAlert} className="px-6 py-4 space-y-4">
+                {/* City Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Target City *
+                  </label>
+                  <select
+                    required
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="ahmedabad">Ahmedabad</option>
+                    <option value="gandhinagar">Gandhinagar</option>
+                    <option value="vadodara">Vadodara</option>
+                    <option value="all">All Cities</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Select specific city or "All Cities" for city-wide announcements
+                  </p>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    minLength={5}
+                    maxLength={200}
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g., Main Street Bridge Under Maintenance"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                {/* Message */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Message *
+                  </label>
+                  <textarea
+                    required
+                    minLength={10}
+                    maxLength={1000}
+                    rows={4}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    placeholder="Provide detailed information about the announcement..."
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {formData.message.length}/1000 characters
+                  </p>
+                </div>
+
+                {/* Severity */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Severity *
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, severity: 'info' })}
+                      className={`px-4 py-2 rounded-md border-2 font-medium transition ${
+                        formData.severity === 'info'
+                          ? 'bg-blue-50 border-blue-500 text-blue-700'
+                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      Info
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, severity: 'warning' })}
+                      className={`px-4 py-2 rounded-md border-2 font-medium transition ${
+                        formData.severity === 'warning'
+                          ? 'bg-orange-50 border-orange-500 text-orange-700'
+                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      Warning
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, severity: 'critical' })}
+                      className={`px-4 py-2 rounded-md border-2 font-medium transition ${
+                        formData.severity === 'critical'
+                          ? 'bg-red-50 border-red-500 text-red-700'
+                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      Critical
+                    </button>
+                  </div>
+                </div>
+
+                {/* Audience */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Audience *
+                  </label>
+                  <select
+                    required
+                    value={formData.audience}
+                    onChange={(e) => setFormData({ ...formData, audience: e.target.value as any })}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="public">Public (Citizens)</option>
+                    <option value="internal">Internal (Municipal Staff)</option>
+                    <option value="both">Both Public & Internal</option>
+                  </select>
+                </div>
+
+                {/* Start Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Start Date (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Leave empty to publish immediately
+                  </p>
+                </div>
+
+                {/* End Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    End Date (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Alert will auto-expire after this date
+                  </p>
+                </div>
+
+                {/* Example Use Cases */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">💡 Example Use Cases:</p>
+                  <ul className="text-xs text-blue-800 dark:text-blue-400 space-y-1">
+                    <li>• Infrastructure: "SG Highway flyover under maintenance Jan 20-25"</li>
+                    <li>• Traffic: "VIP route reserved - avoid CG Road on Republic Day"</li>
+                    <li>• Events: "City Marathon Sunday - expect delays in central areas"</li>
+                    <li>• Emergency: "Heavy rain advisory - avoid low-lying areas"</li>
+                  </ul>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    disabled={isSubmitting}
+                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 font-medium disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 font-medium flex items-center disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Create Alert
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </ProtectedRoute>
   );
