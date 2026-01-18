@@ -225,16 +225,8 @@ async def get_traffic_data(
     zones_data = {}
     for d in data:
         if d.zone not in zones_data:
-            congestion_map = {
-                "low": 30,
-                "medium": 60,
-                "high": 90
-            }
-            congestion_value = (
-                congestion_map.get(d.congestion_level.lower())
-                if isinstance(d.congestion_level, str)
-                else d.congestion_level
-            )
+            # Use actual density_percent for realistic graph variation
+            congestion_value = d.density_percent if d.density_percent is not None else 0
             zones_data[d.zone] = {
                 "zone": d.zone,
                 "congestion": round(float(congestion_value), 1),

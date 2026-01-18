@@ -121,15 +121,34 @@ class WeatherFetcher:
                     
                     data = await response.json()
                     components = data['list'][0]['components']
-                    aqi_level = data['list'][0]['main']['aqi']  # 1-5 scale
+                    pm25 = components.get('pm2_5', 0)
                     
-                    # Convert OpenWeatherMap AQI (1-5) to US AQI (0-500) scale
-                    aqi_map = {1: 50, 2: 100, 3: 150, 4: 200, 5: 300}
-                    aqi = aqi_map.get(aqi_level, 100)
+                    # Calculate actual US AQI from PM2.5 concentration
+                    # US EPA AQI breakpoints for PM2.5
+                    def calculate_aqi_from_pm25(pm25_value):
+                        """Calculate US AQI from PM2.5 concentration (µg/m³)"""
+                        if pm25_value <= 12.0:
+                            return int((50 - 0) / (12.0 - 0) * (pm25_value - 0) + 0)
+                        elif pm25_value <= 35.4:
+                            return int((100 - 51) / (35.4 - 12.1) * (pm25_value - 12.1) + 51)
+                        elif pm25_value <= 55.4:
+                            return int((150 - 101) / (55.4 - 35.5) * (pm25_value - 35.5) + 101)
+                        elif pm25_value <= 150.4:
+                            return int((200 - 151) / (150.4 - 55.5) * (pm25_value - 55.5) + 151)
+                        elif pm25_value <= 250.4:
+                            return int((300 - 201) / (250.4 - 150.5) * (pm25_value - 150.5) + 201)
+                        elif pm25_value <= 350.4:
+                            return int((400 - 301) / (350.4 - 250.5) * (pm25_value - 250.5) + 301)
+                        elif pm25_value <= 500.4:
+                            return int((500 - 401) / (500.4 - 350.5) * (pm25_value - 350.5) + 401)
+                        else:
+                            return 500
+                    
+                    aqi = calculate_aqi_from_pm25(pm25)
                     
                     return {
                         'aqi': aqi,
-                        'pm25': components.get('pm2_5', 0),
+                        'pm25': pm25,
                         'pm10': components.get('pm10', 0),
                         'no2': components.get('no2', 0),
                         'o3': components.get('o3', 0),

@@ -138,6 +138,24 @@ async def scheduler_status():
         "jobs": get_job_status()
     }
 
+@app.post("/scheduler/trigger/weather")
+async def trigger_weather_fetch():
+    """Manually trigger weather and AQI data fetch"""
+    try:
+        from app.modules.fetchers.weather import fetch_all_cities_weather
+        success_count = await fetch_all_cities_weather()
+        return {
+            "success": True,
+            "message": f"Weather fetch completed: {success_count} cities updated",
+            "cities_updated": success_count
+        }
+    except Exception as e:
+        logger.error(f"Manual weather fetch failed: {e}")
+        return {
+            "success": False,
+            "message": str(e)
+        }
+
 
 @app.websocket("/ws/city/{city}")
 async def city_websocket(websocket: WebSocket, city: str):
