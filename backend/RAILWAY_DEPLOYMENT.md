@@ -4,7 +4,7 @@
 
 1. **Procfile** - Tells Railway how to start the app
 2. **railway.json** - Railway-specific configuration
-3. **nixpacks.toml** - Build configuration
+3. **runtime.txt** - Specifies Python version (3.12.1)
 
 ## 🔧 Railway Setup Steps
 
