@@ -6,7 +6,8 @@ A state-level Urban Intelligence Platform for **early risk prediction, AI-powere
 
 ## 🌐 Live Demo
 
-**Deployed Application:** [https://c3-e1x-ingenious-7-0-y7f6.vercel.app/login](https://c3-e1x-ingenious-7-0-y7f6.vercel.app/login)
+**Frontend (Vercel):** [https://c3-e1x-ingenious-7-0-y7f6.vercel.app/login](https://c3-e1x-ingenious-7-0-y7f6.vercel.app/login)  
+**Backend API (Railway):** [https://ingeniousxteamc3e1-production.up.railway.app/docs](https://ingeniousxteamc3e1-production.up.railway.app/docs)
 
 **Test Credentials:**
 - **Admin:** `admin@ingenious.com` / `admin123`
