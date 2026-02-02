@@ -8,19 +8,25 @@ import { api } from '@/lib/api';
 export default function SystemHealthPage() {
   const [healthData, setHealthData] = useState<any>(null);
   const [freshness, setFreshness] = useState<any>(null);
+  const [metadata, setMetadata] = useState<any>(null);
+  const [scheduler, setScheduler] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
   useEffect(() => {
     loadHealthData();
     loadFreshness();
+    loadMetadata();
+    loadScheduler();
     
-    // Refresh every 60 seconds
+    // Refresh every 30 seconds for real-time monitoring
     const interval = setInterval(() => {
       loadHealthData();
       loadFreshness();
+      loadMetadata();
+      loadScheduler();
       setLastUpdate(new Date());
-    }, 60000);
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);
@@ -45,6 +51,24 @@ export default function SystemHealthPage() {
     }
   };
 
+  const loadMetadata = async () => {
+    try {
+      const data = await api.getMetadata();
+      setMetadata(data);
+    } catch (error) {
+      console.error('Failed to load metadata:', error);
+    }
+  };
+
+  const loadScheduler = async () => {
+    try {
+      const data = await api.getSchedulerStatus();
+      setScheduler(data);
+    } catch (error) {
+      console.error('Failed to load scheduler status:', error);
+    }
+  };
+
   const calculateUptime = (status: string) => {
     if (status === 'healthy') {
       return 99.8 + Math.random() * 0.2;
@@ -66,11 +90,24 @@ export default function SystemHealthPage() {
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Health Monitor</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">
-              Real-time monitoring of platform infrastructure and data pipelines
-            </p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Health Monitor</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
+                Real-time monitoring of platform infrastructure and data pipelines
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <svg className="w-4 h-4 animate-pulse text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <circle cx="10" cy="10" r="3"/>
+                </svg>
+                <span>Live • Updates every 30s</span>
+              </div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">
+                Last: {lastUpdate.toLocaleTimeString()}
+              </div>
+            </div>
           </div>
 
           {loading ? (
@@ -88,19 +125,21 @@ export default function SystemHealthPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">API Status</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">Operational</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {healthData?.status === 'healthy' ? 'Operational' : healthData?.status === 'degraded' ? 'Degraded' : 'Unknown'}
+                      </p>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <div className={`w-12 h-12 ${healthData?.status === 'healthy' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'} rounded-lg flex items-center justify-center`}>
+                      <svg className={`w-6 h-6 ${healthData?.status === 'healthy' ? 'text-green-500' : 'text-yellow-500'}`} fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
                       </svg>
                     </div>
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className={`w-4 h-4 ${healthData?.status === 'healthy' ? 'text-green-500' : 'text-yellow-500'} mr-2`} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    Uptime: {calculateUptime(healthData?.status).toFixed(1)}%
+                    Last check: {new Date().toLocaleTimeString()}
                   </div>
                 </div>
 
@@ -108,10 +147,12 @@ export default function SystemHealthPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Database Status</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">Operational</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {healthData?.services?.database === 'healthy' ? 'Operational' : 'Degraded'}
+                      </p>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <div className={`w-12 h-12 ${healthData?.services?.database === 'healthy' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'} rounded-lg flex items-center justify-center`}>
+                      <svg className={`w-6 h-6 ${healthData?.services?.database === 'healthy' ? 'text-green-500' : 'text-red-500'}`} fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z" />
                         <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z" />
                         <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z" />
@@ -119,10 +160,10 @@ export default function SystemHealthPage() {
                     </div>
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className={`w-4 h-4 ${healthData?.services?.database === 'healthy' ? 'text-green-500' : 'text-red-500'} mr-2`} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    Uptime: {(99.9).toFixed(1)}%
+                    {healthData?.services?.database === 'healthy' ? 'Connected' : 'Error'}
                   </div>
                 </div>
 
@@ -130,40 +171,52 @@ export default function SystemHealthPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Scheduler Status</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">Operational</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {scheduler?.running ? 'Running' : 'Stopped'}
+                      </p>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <div className={`w-12 h-12 ${scheduler?.running ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'} rounded-lg flex items-center justify-center`}>
+                      <svg className={`w-6 h-6 ${scheduler?.running ? 'text-green-500' : 'text-red-500'}`} fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
                       </svg>
                     </div>
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className={`w-4 h-4 ${scheduler?.running ? 'text-green-500' : 'text-red-500'} mr-2`} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    Uptime: {(99.7).toFixed(1)}%
+                    {scheduler?.jobs?.length || 0} active jobs
                   </div>
                 </div>
               </div>
 
-              {/* Metrics Cards */}
+              {/* Metrics Cards - REAL-TIME DATA */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Active Cities</p>
-                  <p className="text-4xl font-bold text-red-500">4</p>
+                  <p className="text-4xl font-bold text-red-500">
+                    {metadata?.total_cities || 0}
+                  </p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Data Points Processed</p>
-                  <p className="text-4xl font-bold text-red-500">1.2M</p>
+                  <p className="text-4xl font-bold text-red-500">
+                    {metadata?.data_sources?.reduce((sum: number, ds: any) => sum + (ds.total_ingestions || 0), 0)?.toLocaleString() || '0'}
+                  </p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Alerts Generated</p>
-                  <p className="text-4xl font-bold text-red-500">12</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Data Sources</p>
+                  <p className="text-4xl font-bold text-red-500">
+                    {metadata?.online_sources || 0}/{metadata?.total_sources || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">online/total</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">API Calls</p>
-                  <p className="text-4xl font-bold text-red-500">842K</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Scheduler Jobs</p>
+                  <p className="text-4xl font-bold text-red-500">
+                    {scheduler?.jobs?.length || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">background tasks</p>
                 </div>
               </div>
 

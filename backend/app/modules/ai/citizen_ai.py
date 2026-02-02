@@ -158,7 +158,6 @@ async def get_latest_traffic(city: City) -> Optional[List[Dict]]:
             "zone": td.zone,
             "density_percent": td.density_percent,
             "congestion_level": td.congestion_level,
-            "avg_speed": td.avg_speed,
             "heavy_vehicle_count": td.heavy_vehicle_count,
             "timestamp": td.timestamp.isoformat()
         } for td in traffic_data]

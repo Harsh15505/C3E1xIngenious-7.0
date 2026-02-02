@@ -157,6 +157,28 @@ async def trigger_weather_fetch():
         }
 
 
+@app.post("/scheduler/trigger/all")
+async def trigger_all_data_fetch():
+    """Trigger all data fetchers manually - Environment, Traffic, Services"""
+    try:
+        from app.scheduler import fetch_environment_data, fetch_traffic_data, fetch_service_data
+        
+        await fetch_environment_data()
+        await fetch_traffic_data()
+        await fetch_service_data()
+        
+        return {
+            "success": True,
+            "message": "All data fetch jobs triggered successfully (environment, traffic, services)"
+        }
+    except Exception as e:
+        logger.error(f"Manual data fetch failed: {e}")
+        return {
+            "success": False,
+            "message": str(e)
+        }
+
+
 @app.websocket("/ws/city/{city}")
 async def city_websocket(websocket: WebSocket, city: str):
     await websocket.accept()

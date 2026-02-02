@@ -35,6 +35,7 @@ async def fetch_traffic_data():
     
     try:
         from app.models import City, TrafficData
+        from app.modules.cdo.freshness import FreshnessTracker
         from datetime import timezone
         import random
         
@@ -63,16 +64,20 @@ async def fetch_traffic_data():
                 else:
                     congestion = "low"
                 
-                # Create traffic data
+                # Create traffic data with proper source naming
+                source_name = f"sensor-traffic-{city.name.lower()}-{zone}"
                 await TrafficData.create(
                     city=city,
-                    source="auto-scheduler",
+                    source=source_name,
                     zone=zone,
                     density_percent=base_density,
                     congestion_level=congestion,
                     heavy_vehicle_count=random.randint(10, 80),
                     timestamp=datetime.now(timezone.utc)
                 )
+                
+                # Update DataSource tracking
+                await FreshnessTracker.update_source_status(source_name, success=True)
                 total_created += 1
         
         logger.info(f"✅ Traffic data generated: {total_created} records created")

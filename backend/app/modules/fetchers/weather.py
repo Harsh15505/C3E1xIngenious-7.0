@@ -231,6 +231,9 @@ async def fetch_and_store_weather(city_name: str, lat: float, lon: float) -> boo
             logger.error(f"City {city_name} not found in database")
             return False
         
+        # Prepare source name for tracking
+        source_name = f"sensor-env-{city_name.lower()}"
+        
         # Store environment data (schema-aligned)
         # Always mark real API data with source='openweathermap'
         await EnvironmentData.create(
@@ -244,6 +247,10 @@ async def fetch_and_store_weather(city_name: str, lat: float, lon: float) -> boo
             is_fresh=True,
             is_validated=True  # API data is pre-validated
         )
+        
+        # Update DataSource tracking
+        from app.modules.cdo.freshness import FreshnessTracker
+        await FreshnessTracker.update_source_status(source_name, success=True)
         
         logger.info(f"✓ Stored REAL weather data for {city_name}: Temp={data['temperature']}°C, AQI={data['aqi']}")
         return True
