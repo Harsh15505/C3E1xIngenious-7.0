@@ -6,12 +6,19 @@ from tortoise import Tortoise
 from app.config import get_settings
 import ssl
 from pathlib import Path
+import os
 
 settings = get_settings()
 
 # Tortoise ORM configuration for Aerich migrations
 ca_cert_path = Path(__file__).parent.parent / 'ca-certificate.crt'
-ssl_context = ssl.create_default_context(cafile=str(ca_cert_path))
+
+# SSL configuration - handle both local and Railway deployment
+if ca_cert_path.exists():
+    ssl_context = ssl.create_default_context(cafile=str(ca_cert_path))
+else:
+    # For Railway: use default SSL context (works with Aiven)
+    ssl_context = ssl.create_default_context()
 
 TORTOISE_ORM = {
     'connections': {

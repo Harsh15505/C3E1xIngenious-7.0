@@ -59,7 +59,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",  # Frontend often runs on 3001 when 3000 is busy
-        "https://c3-e1x-ingenious-7-0-y7f6.vercel.app"
+        "https://c3-e1x-ingenious-7-0-y7f6.vercel.app",
+        "https://*.railway.app",  # Railway backend
+        "https://*.up.railway.app"  # Railway custom domains
     ],
     allow_credentials=True,
     allow_methods=["*"],
